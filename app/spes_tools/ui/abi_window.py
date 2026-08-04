@@ -18,7 +18,7 @@ from spes_tools.services.storage import load_abi_config, reset_abi_config, save_
 class AbiWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SPES Tools - Causali ABI")
+        self.setWindowTitle("SPES Configuratore Contabile - Causali ABI")
         self.resize(760, 560)
         self.config = load_abi_config()
         self.tables: dict[str, QTableWidget] = {}

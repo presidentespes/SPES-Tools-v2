@@ -1,0 +1,7 @@
+Verifiche eseguite:
+- parser PDF Nexi: 11 righe
+- totale Nexi di prova: 2.577,55 euro
+- nuovo nome applicazione: SPES Configuratore Contabile
+- modulo CAF rinominato: Convertitore compensi
+- logo incluso in dashboard e icona EXE
+- artifact previsto: SPES_Configuratore_Contabile_4_0

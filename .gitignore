@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Ambienti virtuali
+.venv/
+venv/
+env/
+
+# Build e pacchetti
+build/
+dist/
+*.spec.bak
+*.exe
+*.msi
+*.zip
+*.7z
+
+# IDE e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log e dati locali
+*.log
+*.db
+*.sqlite
+*.sqlite3

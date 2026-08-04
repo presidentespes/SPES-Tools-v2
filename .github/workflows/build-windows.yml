@@ -1,4 +1,4 @@
-name: Build SPES Tools Windows
+name: Build SPES Configuratore Contabile Windows
 
 on:
   workflow_dispatch:
@@ -32,5 +32,6 @@ jobs:
       - name: Pubblica eseguibile
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Tools_Windows_Fase2
-          path: dist/SPES_Tools.exe
+          name: SPES_Configuratore_Contabile_4_0
+          path: dist/SPES_Configuratore_Contabile.exe
+          if-no-files-found: error
