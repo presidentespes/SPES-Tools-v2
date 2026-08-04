@@ -1,4 +1,5 @@
-# SPES Tools - Fase 3 completa
+# SPES Tools 3.3
+
 
 Questa versione aggiunge alla Fase 2:
 
@@ -29,3 +30,9 @@ Prima dell'importazione in TeamSystem verificare sempre il numero dei movimenti,
 - Inclusione automatica di imposta di bollo e spese invio estratto conto.
 - Campo `Lordo gia percepito` visibile e modificabile per il profilo `Collaboratore sportivo`.
 - Visualizzazione e stampa PDF del lordo cumulato.
+
+
+## Correzioni 3.3
+- Campo Lordo gia percepito anche per Pensionato.
+- Calcolo sportivo 2026 con soglia contributiva 5.000 euro, IVS su 50% imponibile e quota collaboratore 1/3.
+- Anteprima automatica del risultato senza creare il PDF.
