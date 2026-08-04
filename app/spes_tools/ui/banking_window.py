@@ -20,7 +20,7 @@ class BankingWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SPES Configuratore Contabile - Riconciliazione bancaria")
+        self.setWindowTitle("SPES Tools - Convertitore bancario")
         self.resize(1180, 720)
         self.movements: list[Movement] = []
         self.source_path = ""
@@ -29,7 +29,7 @@ class BankingWindow(QWidget):
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
-        title = QLabel("Riconciliazione bancaria")
+        title = QLabel("Convertitore bancario")
         title.setStyleSheet("font-size: 24px; font-weight: bold; color: #083b72;")
         layout.addWidget(title)
 
@@ -87,7 +87,7 @@ class BankingWindow(QWidget):
         except Exception as exc:
             QMessageBox.critical(self, "Errore esportazione", str(exc))
             return
-        add_history(module="Riconciliazione bancaria", source=self.source_path, output=path, rows=len(self.movements), details=self.current_format)
+        add_history(module="Convertitore bancario", source=self.source_path, output=path, rows=len(self.movements), details=self.current_format)
         QMessageBox.information(self, "Esportazione completata", f"Creato:\n{path}")
 
     def _fill_table(self) -> None:
