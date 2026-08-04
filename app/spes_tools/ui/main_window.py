@@ -5,13 +5,19 @@ from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QWidget,
 )
 
+from spes_tools.ui.abi_window import AbiWindow
 from spes_tools.ui.banking_window import BankingWindow
+from spes_tools.ui.caf_window import CafWindow
+from spes_tools.ui.history_window import HistoryWindow
 
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.banking_window: BankingWindow | None = None
+        self.caf_window: CafWindow | None = None
+        self.abi_window: AbiWindow | None = None
+        self.history_window: HistoryWindow | None = None
         self.setWindowTitle("SPES Tools")
         self.resize(980, 720)
 
@@ -22,7 +28,7 @@ class MainWindow(QMainWindow):
         title = QLabel("SPES Tools")
         title.setStyleSheet("font-size: 30px; font-weight: bold; color: #083b72;")
         main_layout.addWidget(title)
-        subtitle = QLabel("Strumenti per contabilità, conversioni bancarie e CAF")
+        subtitle = QLabel("Strumenti per contabilita, conversioni bancarie e CAF")
         subtitle.setStyleSheet("font-size: 15px; color: #53657a;")
         main_layout.addWidget(subtitle)
 
@@ -31,9 +37,9 @@ class MainWindow(QMainWindow):
         modules = [
             ("Convertitore bancario", self.open_banking),
             ("Bonifici SEPA", self.open_banking),
-            ("CAF Tools", lambda: self.placeholder("CAF Tools")),
-            ("Causali ABI", lambda: self.placeholder("Causali ABI")),
-            ("Storico", lambda: self.placeholder("Storico")),
+            ("CAF Tools", self.open_caf),
+            ("Causali ABI", self.open_abi),
+            ("Storico", self.open_history),
             ("Informazioni", self.open_info),
         ]
         for index, (label, callback) in enumerate(modules):
@@ -58,12 +64,38 @@ class MainWindow(QMainWindow):
     def open_banking(self) -> None:
         if self.banking_window is None:
             self.banking_window = BankingWindow()
-        self.banking_window.show()
-        self.banking_window.raise_()
-        self.banking_window.activateWindow()
+        self._show(self.banking_window)
 
-    def placeholder(self, name: str) -> None:
-        QMessageBox.information(self, name, f"Il modulo «{name}» sarà aggiunto nella fase successiva.")
+    def open_caf(self) -> None:
+        if self.caf_window is None:
+            self.caf_window = CafWindow()
+        self._show(self.caf_window)
+
+    def open_abi(self) -> None:
+        if self.abi_window is None:
+            self.abi_window = AbiWindow()
+        self._show(self.abi_window)
+
+    def open_history(self) -> None:
+        if self.history_window is None:
+            self.history_window = HistoryWindow()
+        self.history_window.refresh()
+        self._show(self.history_window)
+
+    @staticmethod
+    def _show(window: QWidget) -> None:
+        window.show()
+        window.raise_()
+        window.activateWindow()
 
     def open_info(self) -> None:
-        QMessageBox.information(self, "Informazioni", "SPES Tools 2.0\nConvertitore bancario attivo.")
+        QMessageBox.information(
+            self,
+            "Informazioni",
+            "SPES Tools 3.0\n\n"
+            "Moduli attivi:\n"
+            "- Convertitore bancario e Bonifici SEPA\n"
+            "- CAF Tools\n"
+            "- Configurazione causali ABI\n"
+            "- Storico elaborazioni",
+        )

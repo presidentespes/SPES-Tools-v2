@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from spes_tools.banking.parsers import Movement, export_teamsystem_csv, parse_file
+from spes_tools.services.storage import add_history
 
 
 class BankingWindow(QWidget):
@@ -22,6 +23,8 @@ class BankingWindow(QWidget):
         self.setWindowTitle("SPES Tools - Convertitore bancario")
         self.resize(1180, 720)
         self.movements: list[Movement] = []
+        self.source_path = ""
+        self.current_format = ""
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -62,6 +65,8 @@ class BankingWindow(QWidget):
             QMessageBox.critical(self, "Errore importazione", str(exc))
             return
         self.movements = movements
+        self.source_path = path
+        self.current_format = fmt
         self._fill_table()
         self.status.setText(f"Formato: {fmt} | Movimenti: {len(movements)} | File: {Path(path).name}")
 
@@ -82,6 +87,7 @@ class BankingWindow(QWidget):
         except Exception as exc:
             QMessageBox.critical(self, "Errore esportazione", str(exc))
             return
+        add_history(module="Convertitore bancario", source=self.source_path, output=path, rows=len(self.movements), details=self.current_format)
         QMessageBox.information(self, "Esportazione completata", f"Creato:\n{path}")
 
     def _fill_table(self) -> None:

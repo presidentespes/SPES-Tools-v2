@@ -8,6 +8,8 @@ from typing import Iterable
 
 from pypdf import PdfReader
 
+from spes_tools.services.storage import load_abi_config
+
 
 @dataclass
 class Movement:
@@ -85,7 +87,7 @@ def parse_nexi(path: str | Path) -> list[Movement]:
             continue
         rows.append(Movement(
             data=_date_yy_to_yyyy(date), valuta=_date_yy_to_yyyy(date),
-            dare=amount, causale=description, causale_abi="26 NEXI",
+            dare=amount, causale=description, causale_abi=load_abi_config()["NEXI"]["acquisto"],
             desc_causale="Acquisto carta",
         ))
     return rows
@@ -126,7 +128,7 @@ def parse_bonsepa(path: str | Path) -> list[Movement]:
         date = _normalize_date(_first(n, "data esecuzione", "data", "data disposizione"))
         result.append(Movement(
             data=date, valuta=date, dare=_normalize_amount(amount),
-            causale="Bonifico SEPA", causale_abi="26 VOLKSBANK",
+            causale="Bonifico SEPA", causale_abi=load_abi_config()["VOLKSBANK"]["bonifico_sepa"],
             desc_causale=_first(n, "causale", "descrizione", "motivo pagamento"),
             soggetto=_first(n, "beneficiario", "nome beneficiario", "ordinante"),
             iban=_first(n, "iban beneficiario", "iban"),
@@ -201,29 +203,30 @@ def _date_yy_to_yyyy(value: str) -> str:
 
 def _bcc_rule(description: str, negative: bool) -> tuple[str, str]:
     d = description.lower()
+    cfg = load_abi_config()["BCC"]
     if "incassi pagobancomat" in d or "incassi internazionali" in d:
-        return "09 BCC", "Incasso POS"
+        return cfg["pos"], "Incasso POS"
     if "commission" in d:
-        return "16 BCC", "Commissioni"
+        return cfg["commissioni"], "Commissioni"
     if "bollo" in d:
-        return "19 BCC", "Bollo"
+        return cfg["bollo"], "Bollo"
     if "sdd" in d:
-        return "50 BCC", "Addebito diretto"
+        return cfg["sdd"], "Addebito diretto"
     if "canone" in d:
-        return "66 BCC", "Canone"
+        return cfg["canone"], "Canone"
     if "bonifico a vs favore" in d and not negative:
-        return "47 BCC", "Bonifico in entrata"
+        return cfg["bonifico_entrata"], "Bonifico in entrata"
     if "bonifico" in d and negative:
-        return "26 BCC", "Bonifico in uscita"
-    return ("66 BCC", "Altro movimento") if negative else ("47 BCC", "Entrata")
-
+        return cfg["bonifico_uscita"], "Bonifico in uscita"
+    return (cfg["altro_uscita"], "Altro movimento") if negative else (cfg["altro_entrata"], "Entrata")
 
 def _volksbank_rule(description: str, negative: bool) -> str:
     d = description.lower()
+    cfg = load_abi_config()["VOLKSBANK"]
     if "commission" in d:
-        return "16 VOLKSBANK"
+        return cfg["commissioni"]
     if "sdd" in d:
-        return "50 VOLKSBANK"
+        return cfg["sdd"]
     if "bonifico" in d:
-        return "26 VOLKSBANK" if negative else "47 VOLKSBANK"
-    return "66 VOLKSBANK" if negative else "09 VOLKSBANK"
+        return cfg["bonifico_uscita"] if negative else cfg["bonifico_entrata"]
+    return cfg["altro_uscita"] if negative else cfg["altro_entrata"]
