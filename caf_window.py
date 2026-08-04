@@ -54,15 +54,12 @@ class CafWindow(QWidget):
         self.amount.setSuffix(" EUR")
         form.addRow("Importo", self.amount)
 
-        self.previous_gross = QDoubleSpinBox()
-        self.previous_gross.setRange(0, 10_000_000)
-        self.previous_gross.setDecimals(2)
-        self.previous_gross.setSuffix(" EUR")
-        self.previous_gross.setToolTip(
-            "Lordo gia percepito nello stesso anno. Il dato serve al riepilogo cumulato; "
-            "non applica automaticamente soglie fiscali o contributive."
-        )
-        form.addRow("Lordo gia percepito", self.previous_gross)
+        self.gross_already_received = QDoubleSpinBox()
+        self.gross_already_received.setRange(0, 10_000_000)
+        self.gross_already_received.setDecimals(2)
+        self.gross_already_received.setSuffix(" EUR")
+        self.gross_already_received_label = QLabel("Lordo gia percepito")
+        form.addRow(self.gross_already_received_label, self.gross_already_received)
 
         self.tax_rate = QDoubleSpinBox()
         self.tax_rate.setRange(0, 100)
@@ -115,26 +112,16 @@ class CafWindow(QWidget):
         tax, contrib = defaults.get(profile, (23.0, 0.0))
         self.tax_rate.setValue(tax)
         self.contrib_rate.setValue(contrib)
-        is_sport = profile == "Collaboratore sportivo"
-        self.previous_gross.setVisible(is_sport)
-        label = self.previous_gross.parentWidget()
-        # QFormLayout gestisce separatamente l'etichetta: la recuperiamo per renderla coerente.
-        form = self.previous_gross.parentWidget().layout()
-        if isinstance(form, QFormLayout):
-            label_item = form.labelForField(self.previous_gross)
-            if label_item is not None:
-                label_item.setVisible(is_sport)
+        is_sport_worker = profile == "Collaboratore sportivo"
+        self.gross_already_received_label.setVisible(is_sport_worker)
+        self.gross_already_received.setVisible(is_sport_worker)
+        self.gross_already_received.setEnabled(is_sport_worker)
 
     def calculate(self) -> None:
         amount = self.amount.value()
         tax = self.tax_rate.value() / 100.0
         contrib = self.contrib_rate.value() / 100.0
         deduction = self.deductions.value()
-        previous_gross = (
-            self.previous_gross.value()
-            if self.profile.currentText() == "Collaboratore sportivo"
-            else 0.0
-        )
         total_rate = tax + contrib
 
         if self.mode.currentIndex() == 0:
@@ -152,6 +139,12 @@ class CafWindow(QWidget):
             taxes = max(0.0, gross * tax - deduction)
 
         monthly = net / self.months.value()
+        gross_already_received = (
+            self.gross_already_received.value()
+            if self.profile.currentText() == "Collaboratore sportivo"
+            else 0.0
+        )
+        cumulative_gross = gross_already_received + gross
         self.last_result = {
             "profilo": self.profile.currentText(),
             "modalita": self.mode.currentText(),
@@ -161,22 +154,22 @@ class CafWindow(QWidget):
             "netto": net,
             "netto_mensile": monthly,
             "mensilita": float(self.months.value()),
-            "lordo_gia_percepito": previous_gross,
-            "lordo_cumulato": previous_gross + gross,
+            "lordo_gia_percepito": gross_already_received,
+            "lordo_cumulato": cumulative_gross,
         }
         extra = ""
         if self.profile.currentText() == "Collaboratore sportivo":
             extra = (
-                f"Lordo gia percepito: EUR {previous_gross:,.2f}\n"
-                f"Lordo cumulato annuo: EUR {previous_gross + gross:,.2f}\n"
+                f"\nLordo gia percepito: EUR {gross_already_received:,.2f}"
+                f"\nLordo cumulato: EUR {cumulative_gross:,.2f}"
             )
         self.result.setText(
-            f"Lordo del nuovo compenso: EUR {gross:,.2f}\n"
-            f"{extra}"
+            f"Lordo: EUR {gross:,.2f}\n"
             f"Contributi: EUR {contributions:,.2f}\n"
             f"Imposte stimate: EUR {taxes:,.2f}\n"
             f"Netto: EUR {net:,.2f}\n"
             f"Netto medio per mensilita: EUR {monthly:,.2f}"
+            f"{extra}"
         )
 
     def export_pdf(self) -> None:
@@ -208,16 +201,21 @@ class CafWindow(QWidget):
         lines = [
             f"Profilo: {result.get('profilo', '')}",
             f"Modalita: {result.get('modalita', '')}",
-            f"Lordo del nuovo compenso: EUR {float(result.get('lordo', 0)):,.2f}",
-            f"Lordo gia percepito: EUR {float(result.get('lordo_gia_percepito', 0)):,.2f}",
-            f"Lordo cumulato annuo: EUR {float(result.get('lordo_cumulato', 0)):,.2f}",
+            f"Lordo: EUR {float(result.get('lordo', 0)):,.2f}",
             f"Contributi: EUR {float(result.get('contributi', 0)):,.2f}",
             f"Imposte stimate: EUR {float(result.get('imposte', 0)):,.2f}",
             f"Netto: EUR {float(result.get('netto', 0)):,.2f}",
             f"Netto medio mensile: EUR {float(result.get('netto_mensile', 0)):,.2f}",
+        ]
+        if result.get("profilo") == "Collaboratore sportivo":
+            lines.extend([
+                f"Lordo gia percepito: EUR {float(result.get('lordo_gia_percepito', 0)):,.2f}",
+                f"Lordo cumulato: EUR {float(result.get('lordo_cumulato', 0)):,.2f}",
+            ])
+        lines.extend([
             "",
             "Calcolo indicativo. Verificare i risultati con un professionista abilitato.",
-        ]
+        ])
         for line in lines:
             pdf.drawString(50, y, line)
             y -= 22
