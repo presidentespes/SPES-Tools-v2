@@ -54,7 +54,7 @@ class Calculation:
 class CafWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SPES Tools - CAF Tools")
+        self.setWindowTitle("SPES Configuratore Contabile - Convertitore compensi")
         self.resize(820, 760)
         self.last_result: Calculation | None = None
         self._build_ui()
@@ -64,10 +64,10 @@ class CafWindow(QWidget):
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
 
-        title = QLabel("CAF Tools")
+        title = QLabel("Convertitore compensi")
         title.setStyleSheet("font-size: 28px; font-weight: bold; color: #083b72;")
         layout.addWidget(title)
-        subtitle = QLabel("Calcolatore Lordo ↔ Netto - versione 3.3")
+        subtitle = QLabel("Calcolo Lordo ↔ Netto - versione 4.0")
         subtitle.setStyleSheet("color: #53657a;")
         layout.addWidget(subtitle)
 
@@ -407,7 +407,7 @@ class CafWindow(QWidget):
         if self.last_result is None:
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Salva calcolo PDF", "calcolo_caf.pdf", "PDF (*.pdf)"
+            self, "Salva calcolo PDF", "calcolo_compensi.pdf", "PDF (*.pdf)"
         )
         if not path:
             return
@@ -416,7 +416,7 @@ class CafWindow(QWidget):
         try:
             self._write_pdf(Path(path))
             add_history(
-                module="CAF Tools",
+                module="Convertitore compensi",
                 source="Calcolo manuale",
                 output=path,
                 rows=1,
@@ -431,7 +431,7 @@ class CafWindow(QWidget):
         pdf = canvas.Canvas(str(path), pagesize=A4)
         _, height = A4
         pdf.setFont("Helvetica-Bold", 18)
-        pdf.drawString(50, height - 60, "SPES Tools - Calcolo lordo/netto")
+        pdf.drawString(50, height - 60, "SPES Configuratore Contabile - Calcolo lordo/netto")
         pdf.setFont("Helvetica", 10)
         y = height - 100
         lines = [self.primary_result.text(), ""] + self.details.toPlainText().splitlines()

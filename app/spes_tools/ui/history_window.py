@@ -22,7 +22,7 @@ class HistoryWindow(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("SPES Tools - Storico")
+        self.setWindowTitle("SPES Configuratore Contabile - Storico operazioni")
         self.resize(1100, 620)
         self.records: list[dict] = []
         self._build_ui()

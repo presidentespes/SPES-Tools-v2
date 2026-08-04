@@ -1,1 +1,1 @@
-"""Interfaccia grafica di SPES Tools."""
+"""Interfaccia grafica di SPES Configuratore Contabile."""

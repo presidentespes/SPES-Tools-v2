@@ -1,1 +1,1 @@
-"""Servizi persistenti di SPES Tools."""
+"""Servizi persistenti di SPES Configuratore Contabile."""
