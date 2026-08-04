@@ -37,7 +37,7 @@ def detect_format(path: str | Path) -> str:
     name = p.name.lower()
     if suffix == ".pdf":
         text = _read_pdf_text(p).lower()
-        if "nexi" in text:
+        if "nexi" in text or "dettagliodeisuoimovimenti" in _compact(text):
             return "NEXI"
         if "relaxbanking" in text or "credito cooperativo" in text:
             return "BCC"
@@ -55,7 +55,13 @@ def detect_format(path: str | Path) -> str:
 def parse_file(path: str | Path) -> tuple[str, list[Movement]]:
     fmt = detect_format(path)
     if fmt == "NEXI":
-        return fmt, parse_nexi(path)
+        rows = parse_nexi(path)
+        if not rows:
+            raise ValueError(
+                "Il PDF e stato riconosciuto come Nexi, ma non sono stati trovati movimenti. "
+                "Verificare che sia un estratto conto con testo selezionabile."
+            )
+        return fmt, rows
     if fmt == "BCC":
         return fmt, parse_bcc(path)
     if fmt == "BONIFICI_SEPA_VOLKSBANK":
@@ -78,17 +84,72 @@ def export_teamsystem_csv(path: str | Path, rows: Iterable[Movement]) -> None:
 
 
 def parse_nexi(path: str | Path) -> list[Movement]:
+    """Parse Nexi statements even when PDF extraction removes most spaces.
+
+    Nexi PDFs commonly expose the detail page as one long text run, e.g.
+    ``06/02/25Eni... 948,3208/02/25Hotel...``.  The parser therefore
+    searches between successive dates rather than relying on line breaks.
+    """
     text = _read_pdf_text(Path(path))
-    pattern = re.compile(r"(?m)^(\d{2}/\d{2}/\d{2})\s+(.+?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})\s*$")
+    compact = _compact(text)
+    cfg = load_abi_config()["NEXI"]
+
+    detail_marker = "DETTAGLIODEISUOIMOVIMENTI"
+    start = compact.upper().find(detail_marker)
+    detail = compact[start + len(detail_marker):] if start >= 0 else compact
+
+    # Remove the table heading, preserving the movement dates that follow it.
+    detail = re.sub(
+        r"^DataDescrizioneImportoinEuro(?:ImportoinaltrevaluteCambio)?",
+        "",
+        detail,
+        flags=re.IGNORECASE,
+    )
+
+    movement_pattern = re.compile(
+        r"(\d{2}/\d{2}/\d{2})"                 # transaction date
+        r"(.*?)"                                # description
+        r"(\d{1,3}(?:\.\d{3})*,\d{2})"       # amount
+        r"(?=\d{2}/\d{2}/\d{2}|TOTALESPESE|$)",
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
     rows: list[Movement] = []
-    for date, description, amount in pattern.findall(text):
-        description = " ".join(description.split())
-        if description.upper().startswith("TOTALE"):
+    for date, raw_description, amount in movement_pattern.findall(detail):
+        description = _humanize_nexi_description(raw_description)
+        if not description or description.upper().startswith("TOTALE"):
             continue
         rows.append(Movement(
-            data=_date_yy_to_yyyy(date), valuta=_date_yy_to_yyyy(date),
-            dare=amount, causale=description, causale_abi=load_abi_config()["NEXI"]["acquisto"],
+            data=_date_yy_to_yyyy(date),
+            valuta=_date_yy_to_yyyy(date),
+            dare=amount,
+            causale=description,
+            causale_abi=cfg["acquisto"],
             desc_causale="Acquisto carta",
+        ))
+
+    # Add statement charges from the summary page.  These are not listed on
+    # the card-detail page but are needed to reconcile the bank debit.
+    statement_date = _nexi_statement_end_date(compact)
+    stamp = _find_compact_amount(compact, "Impostadibollo")
+    if stamp:
+        rows.append(Movement(
+            data=statement_date,
+            valuta=statement_date,
+            dare=stamp,
+            causale="IMPOSTA DI BOLLO",
+            causale_abi=cfg["bollo"],
+            desc_causale="Imposta di bollo",
+        ))
+    delivery = _find_compact_amount(compact, "Speseinvioestrattoconto")
+    if delivery:
+        rows.append(Movement(
+            data=statement_date,
+            valuta=statement_date,
+            dare=delivery,
+            causale="SPESE INVIO ESTRATTO CONTO",
+            causale_abi=cfg["spese"],
+            desc_causale="Spese estratto conto",
         ))
     return rows
 
@@ -187,7 +248,7 @@ def _normalize_date(value: str) -> str:
 
 
 def _normalize_amount(value: str) -> str:
-    value = value.strip().replace("€", "").replace(" ", "").lstrip("-")
+    value = value.strip().replace("EUR", "").replace("€", "").replace(" ", "").lstrip("-")
     if "," in value:
         return value
     try:
@@ -199,6 +260,44 @@ def _normalize_amount(value: str) -> str:
 def _date_yy_to_yyyy(value: str) -> str:
     day, month, year = value.split("/")
     return f"{day}/{month}/20{year}"
+
+
+def _compact(value: str) -> str:
+    return re.sub(r"\s+", "", value)
+
+
+def _humanize_nexi_description(value: str) -> str:
+    # The PDF often removes all spaces. Preserve known punctuation and add
+    # limited spacing around common merchant tokens without guessing names.
+    value = value.strip(" -")
+    value = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", value)
+    value = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", value)
+    value = re.sub(r"(?<=\d)(?=[A-Za-z])", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _find_compact_amount(compact: str, label: str) -> str:
+    match = re.search(re.escape(label) + r"(\d{1,3}(?:\.\d{3})*,\d{2})", compact, re.IGNORECASE)
+    return match.group(1) if match else ""
+
+
+def _nexi_statement_end_date(compact: str) -> str:
+    match = re.search(r"Debitoresiduoal(\d{2}/\d{2}/\d{4})", compact, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    # Fallback to the statement heading, e.g. Milano,28Febbraio2025.
+    month_names = {
+        "gennaio": "01", "febbraio": "02", "marzo": "03", "aprile": "04",
+        "maggio": "05", "giugno": "06", "luglio": "07", "agosto": "08",
+        "settembre": "09", "ottobre": "10", "novembre": "11", "dicembre": "12",
+    }
+    match = re.search(r"Milano,?(\d{1,2})([A-Za-z]+)(\d{4})", compact, re.IGNORECASE)
+    if match:
+        day, month_name, year = match.groups()
+        month = month_names.get(month_name.lower())
+        if month:
+            return f"{int(day):02d}/{month}/{year}"
+    return ""
 
 
 def _bcc_rule(description: str, negative: bool) -> tuple[str, str]:
@@ -219,6 +318,7 @@ def _bcc_rule(description: str, negative: bool) -> tuple[str, str]:
     if "bonifico" in d and negative:
         return cfg["bonifico_uscita"], "Bonifico in uscita"
     return (cfg["altro_uscita"], "Altro movimento") if negative else (cfg["altro_entrata"], "Entrata")
+
 
 def _volksbank_rule(description: str, negative: bool) -> str:
     d = description.lower()

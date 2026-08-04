@@ -78,92 +78,119 @@ def export_teamsystem_csv(path: str | Path, rows: Iterable[Movement]) -> None:
 
 
 def parse_nexi(path: str | Path) -> list[Movement]:
-    """Legge il dettaglio movimenti degli estratti Nexi testuali.
+    """Legge gli estratti Nexi anche quando il testo PDF spezza le righe.
 
-    Nexi spesso estrae l'intestazione e il primo movimento sulla stessa riga;
-    per questo il parser lavora sulla sezione compresa tra
-    "DETTAGLIO DEI SUOI MOVIMENTI" e "TOTALE SPESE", senza dipendere
-    dagli a-capo del PDF.
+    Il parser cerca blocchi che iniziano con una data e usa l'ultimo importo
+    presente nel blocco come importo del movimento. In questo modo funziona
+    sia con righe singole sia con descrizioni distribuite su piu righe.
     """
     text = _read_pdf_text(Path(path))
-    normalized = re.sub(r"[\t\r]+", " ", text)
+    normalized = text.replace("\u00a0", " ").replace("\r", "\n")
+    normalized = re.sub(r"[ \t]+", " ", normalized)
 
-    section_match = re.search(
-        r"DETTAGLIO\s*DEI\s*SUOI\s*MOVIMENTI(?P<body>.*?)(?:TOTALE\s*SPESE|SERVIZIO\s*CLIENTI)",
-        normalized,
-        flags=re.IGNORECASE | re.DOTALL,
+    date_re = r"\d{2}[/-]\d{2}[/-]\d{2,4}"
+    block_pattern = re.compile(
+        rf"(?ms)(?P<date>{date_re})\s+(?P<body>.*?)(?=(?:^{date_re}\s+)|\Z)"
     )
-    if not section_match:
-        raise ValueError(
-            "Nel PDF Nexi non e stata trovata la sezione 'DETTAGLIO DEI SUOI MOVIMENTI'. "
-            "Verificare che il PDF contenga testo selezionabile."
-        )
+    amount_pattern = re.compile(
+        r"(?<!\d)(?:EUR\s*|€\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})(?!\d)",
+        re.IGNORECASE,
+    )
 
-    body = section_match.group("body")
-    date_re = re.compile(r"(?P<date>\d{2}/\d{2}/(?:\d{4}|\d{2}))")
-    amount_re = re.compile(r"(?P<amount>\d{1,3}(?:\.\d{3})*,\d{2})")
-    dates = list(date_re.finditer(body))
     cfg = load_abi_config()["NEXI"]
     rows: list[Movement] = []
+    seen: set[tuple[str, str, str]] = set()
 
-    for index, date_match in enumerate(dates):
-        segment_end = dates[index + 1].start() if index + 1 < len(dates) else len(body)
-        segment = body[date_match.end():segment_end]
-        amounts = list(amount_re.finditer(segment))
+    for match in block_pattern.finditer(normalized):
+        raw_date = match.group("date")
+        body = match.group("body")
+        amounts = list(amount_pattern.finditer(body))
         if not amounts:
             continue
 
         amount_match = amounts[-1]
-        description = " ".join(segment[:amount_match.start()].split())
-        description = re.sub(
-            r"^(?:Data\s*Descrizione\s*Importo\s*in\s*Euro(?:\s*Importo\s*in\s*altre\s*valute\s*Cambio)?)\s*",
-            "",
-            description,
-            flags=re.IGNORECASE,
-        ).strip(" -")
-        if not description or description.upper().startswith("TOTALE"):
+        amount = amount_match.group(1).lstrip("-")
+        description = body[:amount_match.start()]
+        description = " ".join(description.replace("\n", " ").split())
+        upper = description.upper()
+
+        if not description:
+            continue
+        if any(token in upper for token in (
+            "TOTALE SPESE", "TOTALE MOVIMENTI", "SALDO", "IMPORTO ADDEBITATO",
+            "PAGAMENTO DA EFFETTUARE", "RIEPILOGO",
+        )):
             continue
 
-        date = _normalize_nexi_date(date_match.group("date"))
+        date = _normalize_nexi_date(raw_date)
+        key = (date, description, amount)
+        if key in seen:
+            continue
+        seen.add(key)
+
         rows.append(Movement(
             data=date,
             valuta=date,
-            dare=amount_match.group("amount"),
+            dare=amount,
             causale=description,
             causale_abi=cfg["acquisto"],
             desc_causale="Acquisto carta",
         ))
 
+    # Alcuni estratti espongono bollo e spese solo nel riepilogo finale.
+    _append_nexi_summary_fee(
+        rows, normalized, r"imposta\s+di\s+bollo", cfg.get("bollo", "19 NEXI"),
+        "IMPOSTA DI BOLLO", "Imposta di bollo",
+    )
+    _append_nexi_summary_fee(
+        rows, normalized, r"spese\s+(?:di\s+)?invio\s+estratto\s+conto",
+        cfg.get("spese", "16 NEXI"), "SPESE INVIO ESTRATTO CONTO",
+        "Spese estratto conto",
+    )
+
     if not rows:
         raise ValueError(
-            "Il PDF e stato riconosciuto come Nexi, ma non sono stati estratti movimenti. "
-            "Il layout potrebbe essere diverso da quello supportato."
+            "Il PDF e stato riconosciuto come Nexi, ma non sono stati trovati movimenti. "
+            "Verifica che il PDF contenga testo selezionabile e non sia una scansione."
         )
-
-    statement_date = _nexi_statement_date(normalized, rows[-1].data)
-    bollo = _extract_labeled_amount(normalized, "Imposta di bollo")
-    if bollo:
-        rows.append(Movement(
-            data=statement_date,
-            valuta=statement_date,
-            dare=bollo,
-            causale="IMPOSTA DI BOLLO",
-            causale_abi=cfg["bollo"],
-            desc_causale="Imposta di bollo",
-        ))
-
-    spese = _extract_labeled_amount(normalized, "Spese invio estratto conto")
-    if spese:
-        rows.append(Movement(
-            data=statement_date,
-            valuta=statement_date,
-            dare=spese,
-            causale="SPESE INVIO ESTRATTO CONTO",
-            causale_abi=cfg["spese"],
-            desc_causale="Spese estratto conto",
-        ))
-
     return rows
+
+
+def _normalize_nexi_date(value: str) -> str:
+    value = value.replace("-", "/")
+    parts = value.split("/")
+    if len(parts) == 3 and len(parts[2]) == 2:
+        parts[2] = "20" + parts[2]
+    return "/".join(parts)
+
+
+def _append_nexi_summary_fee(
+    rows: list[Movement],
+    text: str,
+    label_pattern: str,
+    abi: str,
+    causale: str,
+    desc: str,
+) -> None:
+    pattern = re.compile(
+        rf"{label_pattern}.{{0,80}}?(\d{{1,3}}(?:\.\d{{3}})*,\d{{2}})",
+        re.IGNORECASE | re.DOTALL,
+    )
+    match = pattern.search(text)
+    if not match:
+        return
+    amount = match.group(1)
+    if any(r.causale.upper() == causale and r.dare == amount for r in rows):
+        return
+    date = rows[-1].data if rows else ""
+    rows.append(Movement(
+        data=date,
+        valuta=date,
+        dare=amount,
+        causale=causale,
+        causale_abi=abi,
+        desc_causale=desc,
+    ))
 
 
 def parse_bcc(path: str | Path) -> list[Movement]:
@@ -272,42 +299,6 @@ def _normalize_amount(value: str) -> str:
 def _date_yy_to_yyyy(value: str) -> str:
     day, month, year = value.split("/")
     return f"{day}/{month}/20{year}"
-
-
-def _normalize_nexi_date(value: str) -> str:
-    parts = value.split("/")
-    if len(parts) != 3:
-        return value
-    day, month, year = parts
-    if len(year) == 2:
-        year = f"20{year}"
-    return f"{day}/{month}/{year}"
-
-
-def _extract_labeled_amount(text: str, label: str) -> str:
-    match = re.search(
-        rf"{re.escape(label).replace(r'\ ' , r'\s*')}\s*(\d{{1,3}}(?:\.\d{{3}})*,\d{{2}})",
-        text,
-        flags=re.IGNORECASE,
-    )
-    return match.group(1) if match else ""
-
-
-def _nexi_statement_date(text: str, fallback: str) -> str:
-    match = re.search(r"Debito\s*residuo\s*al\s*(\d{2}/\d{2}/\d{4})", text, re.IGNORECASE)
-    if match:
-        return match.group(1)
-    months = {
-        "gennaio": "01", "febbraio": "02", "marzo": "03", "aprile": "04",
-        "maggio": "05", "giugno": "06", "luglio": "07", "agosto": "08",
-        "settembre": "09", "ottobre": "10", "novembre": "11", "dicembre": "12",
-    }
-    match = re.search(r"Milano,?\s*(\d{1,2})\s*([A-Za-z]+)\s*(\d{4})", text, re.IGNORECASE)
-    if match:
-        month = months.get(match.group(2).lower())
-        if month:
-            return f"{int(match.group(1)):02d}/{month}/{match.group(3)}"
-    return fallback
 
 
 def _bcc_rule(description: str, negative: bool) -> tuple[str, str]:

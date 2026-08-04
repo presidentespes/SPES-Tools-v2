@@ -22,3 +22,10 @@ Il calcolo lordo/netto e indicativo e non sostituisce un cedolino, un prospetto 
 ## Avvertenza contabile
 
 Prima dell'importazione in TeamSystem verificare sempre il numero dei movimenti, i totali Dare/Avere e le causali ABI rispetto al documento originale.
+
+## Versione 3.2 - correzioni
+
+- Parser Nexi compatibile con gli estratti in cui il testo PDF viene estratto senza spazi o interruzioni di riga.
+- Inclusione automatica di imposta di bollo e spese invio estratto conto.
+- Campo `Lordo gia percepito` visibile e modificabile per il profilo `Collaboratore sportivo`.
+- Visualizzazione e stampa PDF del lordo cumulato.

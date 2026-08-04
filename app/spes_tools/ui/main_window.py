@@ -92,7 +92,7 @@ class MainWindow(QMainWindow):
         QMessageBox.information(
             self,
             "Informazioni",
-            "SPES Tools 3.0\n\n"
+            "SPES Tools 3.2\n\n"
             "Moduli attivi:\n"
             "- Convertitore bancario e Bonifici SEPA\n"
             "- CAF Tools\n"

@@ -1,0 +1,77 @@
+{
+  "_version": 4,
+  "NEXI": {
+    "acquisto": {
+      "code": "26 NEXI",
+      "desc": "Acquisto carta"
+    },
+    "bollo": {
+      "code": "19 NEXI",
+      "desc": "Imposta di bollo"
+    },
+    "spese": {
+      "code": "16 NEXI",
+      "desc": "Spese estratto conto"
+    }
+  },
+  "BCC": {
+    "incassi_pos": {
+      "code": "09 BCC",
+      "desc": "Incasso POS"
+    },
+    "bonifico_entrata": {
+      "code": "47 BCC",
+      "desc": "Bonifico in entrata"
+    },
+    "bonifico_uscita": {
+      "code": "26 BCC",
+      "desc": "Bonifico in uscita"
+    },
+    "sdd": {
+      "code": "50 BCC",
+      "desc": "Addebito diretto SEPA"
+    },
+    "commissioni": {
+      "code": "16 BCC",
+      "desc": "Commissioni bancarie"
+    },
+    "bollo": {
+      "code": "19 BCC",
+      "desc": "Imposta di bollo"
+    },
+    "canone": {
+      "code": "66 BCC",
+      "desc": "Canone bancario"
+    },
+    "altro": {
+      "code": "66 BCC",
+      "desc": "Altro movimento bancario"
+    }
+  },
+  "VOLKSBANK": {
+    "bonifico_entrata": {
+      "code": "48 VOLKSBANK",
+      "desc": "Bonifico in entrata"
+    },
+    "bonifico_uscita": {
+      "code": "26 VOLKSBANK",
+      "desc": "Bonifico in uscita"
+    },
+    "sdd": {
+      "code": "50 VOLKSBANK",
+      "desc": "Addebito diretto SEPA"
+    },
+    "commissioni": {
+      "code": "16 VOLKSBANK",
+      "desc": "Commissioni bancarie"
+    },
+    "pos": {
+      "code": "09 VOLKSBANK",
+      "desc": "Incasso POS"
+    },
+    "altro": {
+      "code": "66 VOLKSBANK",
+      "desc": "Altro movimento bancario"
+    }
+  }
+}
