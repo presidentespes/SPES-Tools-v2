@@ -1,38 +1,31 @@
-# SPES Tools 3.3
+# SPES Configuratore Contabile 4.0
 
+Applicazione desktop di ASD SPES Mestre Ginnastica per:
 
-Questa versione aggiunge alla Fase 2:
+- riconciliazione bancaria Nexi, BCC e Volksbank;
+- conversione Bonifici SEPA;
+- esportazione CSV TeamSystem;
+- conversione compensi Lordo ↔ Netto con anteprima;
+- configurazione causali ABI;
+- storico operazioni.
 
-- **CAF Tools**: calcolo indicativo lordo/netto, aliquote modificabili ed esportazione PDF;
-- **Causali ABI**: editor persistente per NEXI, BCC e VOLKSBANK;
-- **Storico**: registra esportazioni bancarie e PDF CAF;
-- configurazioni e storico salvati in `%APPDATA%\\SPES_Tools`;
-- i parser bancari leggono le causali ABI salvate dall'utente.
+## Identità grafica
 
-## Build
+Il logo SPES è incluso nella dashboard, nell'icona delle finestre e nell'eseguibile Windows.
 
-1. Caricare tutto il contenuto nel repository GitHub, inclusa `.github`.
+## Build Windows
+
+1. Caricare l'intero contenuto nel repository GitHub, inclusa `.github` e `assets`.
 2. Aprire **Actions**.
-3. Avviare **Build SPES Tools Windows**.
-4. Scaricare l'artifact `SPES_Tools_Windows_Fase3`.
+3. Avviare **Build SPES Configuratore Contabile Windows**.
+4. Scaricare l'artifact `SPES_Configuratore_Contabile_4_0`.
 
-## Avvertenza CAF
+Il file generato è:
 
-Il calcolo lordo/netto e indicativo e non sostituisce un cedolino, un prospetto fiscale o la consulenza di un professionista abilitato.
+```text
+SPES_Configuratore_Contabile.exe
+```
 
-## Avvertenza contabile
+## Avvertenza sui compensi
 
-Prima dell'importazione in TeamSystem verificare sempre il numero dei movimenti, i totali Dare/Avere e le causali ABI rispetto al documento originale.
-
-## Versione 3.2 - correzioni
-
-- Parser Nexi compatibile con gli estratti in cui il testo PDF viene estratto senza spazi o interruzioni di riga.
-- Inclusione automatica di imposta di bollo e spese invio estratto conto.
-- Campo `Lordo gia percepito` visibile e modificabile per il profilo `Collaboratore sportivo`.
-- Visualizzazione e stampa PDF del lordo cumulato.
-
-
-## Correzioni 3.3
-- Campo Lordo gia percepito anche per Pensionato.
-- Calcolo sportivo 2026 con soglia contributiva 5.000 euro, IVS su 50% imponibile e quota collaboratore 1/3.
-- Anteprima automatica del risultato senza creare il PDF.
+I calcoli sono simulazioni operative e devono essere verificati dal consulente del lavoro o fiscale prima dell'uso per adempimenti ufficiali.
