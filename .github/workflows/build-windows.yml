@@ -25,6 +25,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-build.txt
 
+      - name: Esegui test
+        run: |
+          $env:PYTHONPATH = "app"
+          python -m pytest -q
+
       - name: Crea eseguibile
         run: |
           pyinstaller --noconfirm SPES_Tools.spec
@@ -32,6 +37,6 @@ jobs:
       - name: Pubblica eseguibile
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_4_0
+          name: SPES_Configuratore_Contabile_5_0
           path: dist/SPES_Configuratore_Contabile.exe
           if-no-files-found: error

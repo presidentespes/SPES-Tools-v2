@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import csv
 import re
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
 from pypdf import PdfReader
 
-from spes_tools.services.storage import load_abi_config
+from spes_tools.services.storage import load_abi_config, load_rules_config
 
 
 @dataclass
@@ -36,11 +37,20 @@ def detect_format(path: str | Path) -> str:
     suffix = p.suffix.lower()
     name = p.name.lower()
     if suffix == ".pdf":
-        text = _read_pdf_text(p).lower()
-        if "nexi" in text or "dettagliodeisuoimovimenti" in _compact(text):
-            return "NEXI"
-        if "relaxbanking" in text or "credito cooperativo" in text:
+        text = _read_pdf_text(p)
+        lower = text.lower()
+        compact = _compact(lower)
+        # BCC/RelaxBanking must be checked before Nexi because statements may
+        # contain generic card/SEPA wording that must not trigger Nexi.
+        if (
+            "relax banking" in lower
+            or "relaxbanking" in compact
+            or "banca della marca credito cooperativo" in lower
+            or "credito cooperativo" in lower
+        ):
             return "BCC"
+        if "nexi payments" in lower or "dettagliodeisuoimovimenti" in compact:
+            return "NEXI"
         return "PDF"
     if suffix in {".csv", ".txt", ".xls"}:
         sample = p.read_text(encoding="utf-8-sig", errors="ignore")[:5000].lower()
@@ -54,21 +64,34 @@ def detect_format(path: str | Path) -> str:
 
 def parse_file(path: str | Path) -> tuple[str, list[Movement]]:
     fmt = detect_format(path)
-    if fmt == "NEXI":
-        rows = parse_nexi(path)
-        if not rows:
-            raise ValueError(
-                "Il PDF e stato riconosciuto come Nexi, ma non sono stati trovati movimenti. "
-                "Verificare che sia un estratto conto con testo selezionabile."
-            )
-        return fmt, rows
-    if fmt == "BCC":
-        return fmt, parse_bcc(path)
-    if fmt == "BONIFICI_SEPA_VOLKSBANK":
-        return fmt, parse_bonsepa(path)
-    if fmt == "VOLKSBANK":
-        return fmt, parse_volksbank(path)
-    raise ValueError(f"Formato non supportato: {fmt}")
+    parsers = {
+        "NEXI": parse_nexi,
+        "BCC": parse_bcc,
+        "BONIFICI_SEPA_VOLKSBANK": parse_bonsepa,
+        "VOLKSBANK": parse_volksbank,
+    }
+    if fmt in parsers:
+        rows = parsers[fmt](path)
+        if rows:
+            return fmt, rows
+
+    # Fallback prudente per PDF: se il rilevamento iniziale non produce righe,
+    # prova gli altri parser PDF prima di mostrare un errore.
+    if Path(path).suffix.lower() == ".pdf":
+        for candidate in ("BCC", "NEXI"):
+            if candidate == fmt:
+                continue
+            try:
+                rows = parsers[candidate](path)
+            except Exception:
+                rows = []
+            if rows:
+                return candidate, rows
+
+    raise ValueError(
+        f"Formato non supportato o nessun movimento trovato ({fmt}). "
+        "Verificare che il documento contenga testo selezionabile."
+    )
 
 
 def export_teamsystem_csv(path: str | Path, rows: Iterable[Movement]) -> None:
@@ -155,26 +178,75 @@ def parse_nexi(path: str | Path) -> list[Movement]:
 
 
 def parse_bcc(path: str | Path) -> list[Movement]:
-    text = _read_pdf_text(Path(path))
-    compact = text.replace(" ", "")
-    iban_match = re.search(r"\bIT\d{2}[A-Z]\d{22}\b", compact)
+    text = _read_pdf_text(Path(path)).replace("\r", "")
+    compact = re.sub(r"\s+", "", text)
+    iban_match = re.search(r"IT\d{2}[A-Z]\d{22}", compact)
     iban = iban_match.group(0) if iban_match else ""
-    pattern = re.compile(
-        r"(?m)^(\d{2}/\d{2}/\d{4})\s+(\d{2}/\d{2}/\d{4})\s+"
-        r"(-?\d{1,3}(?:\.\d{3})*,\d{2})\s+(.+)$"
+
+    # A movement starts with accounting date, value date, amount. Everything
+    # until the next such line belongs to the same multi-line description.
+    start_pattern = re.compile(
+        r"(?m)^(\d{2}/\d{2}/\d{4})\s+"
+        r"(\d{2}/\d{2}/\d{4})\s+"
+        r"(-?\d{1,3}(?:\.\d{3})*,\d{2})\s+"
     )
+    matches = list(start_pattern.finditer(text))
+    cfg = load_abi_config()["BCC"]
     rows: list[Movement] = []
-    for data, valuta, raw, description in pattern.findall(text):
+
+    for index, match in enumerate(matches):
+        data, valuta, raw = match.groups()
+        block_end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        description = text[match.end():block_end]
+        # Remove repeated PDF headers/footers from the description block.
+        cleaned_lines: list[str] = []
+        for line in description.splitlines():
+            stripped = " ".join(line.split())
+            lower = stripped.lower()
+            if not stripped:
+                continue
+            if lower.startswith((
+                "stampa da relax banking", "iban", "conto ", "dati aggiornati",
+                "saldo contabile", "saldo disponibile", "periodo", "tipo movimento",
+                "causale", "importo", "visto", "dati del conto", "movimenti",
+                "banca della marca credito cooperativo", "mestre viale",
+                "data contabile data valuta importo descrizione",
+            )):
+                continue
+            cleaned_lines.append(stripped)
+        description = " ".join(cleaned_lines).strip()
+        desc_lower = description.lower()
+        if desc_lower.startswith("saldo iniziale") or desc_lower.startswith("saldo finale"):
+            continue
+
         negative = raw.startswith("-")
         amount = raw.lstrip("-")
         abi, label = _bcc_rule(description, negative)
+        subject = ""
+        subject_match = re.search(
+            r"Ragione sociale ordinante:\s*(.+?)(?=\s+(?:Indirizzo ordinante|ID_BONIFICO|Descrizione aggiuntiva|Descrizione estesa|Data ordine|Localita ordinante):|$)",
+            description,
+            re.IGNORECASE,
+        )
+        if subject_match:
+            subject = " ".join(subject_match.group(1).split())
+
         rows.append(Movement(
-            data=data, valuta=valuta,
+            data=data,
+            valuta=valuta,
             dare=amount if negative else "",
             avere=amount if not negative else "",
-            causale=" ".join(description.split()),
-            causale_abi=abi, desc_causale=label, iban=iban,
+            causale=description,
+            causale_abi=abi,
+            desc_causale=label,
+            soggetto=subject,
+            iban=iban,
         ))
+
+    if not rows:
+        raise ValueError(
+            "Il PDF è stato riconosciuto come BCC RelaxBanking, ma non sono stati trovati movimenti."
+        )
     return rows
 
 
@@ -320,13 +392,25 @@ def _bcc_rule(description: str, negative: bool) -> tuple[str, str]:
     return (cfg["altro_uscita"], "Altro movimento") if negative else (cfg["altro_entrata"], "Entrata")
 
 
+def _normalize_words(value: str) -> str:
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(ch for ch in value if not unicodedata.combining(ch))
+    return value.casefold()
+
+
 def _volksbank_rule(description: str, negative: bool) -> str:
-    d = description.lower()
+    d = _normalize_words(description)
     cfg = load_abi_config()["VOLKSBANK"]
     if "commission" in d:
         return cfg["commissioni"]
     if "sdd" in d:
         return cfg["sdd"]
     if "bonifico" in d:
-        return cfg["bonifico_uscita"] if negative else cfg["bonifico_entrata"]
+        if negative:
+            return cfg["bonifico_uscita"]
+        keywords = load_rules_config().get("VOLKSBANK", {}).get("quota_corso_keywords", [])
+        normalized_keywords = [_normalize_words(word).strip() for word in keywords]
+        if any(word and word in d for word in normalized_keywords):
+            return cfg["quota_corso_entrata"]
+        return cfg["bonifico_entrata"]
     return cfg["altro_uscita"] if negative else cfg["altro_entrata"]

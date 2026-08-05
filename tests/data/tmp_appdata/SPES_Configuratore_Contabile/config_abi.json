@@ -1,0 +1,43 @@
+{
+  "NEXI": {
+    "acquisto": "26 NEXI",
+    "bollo": "19 NEXI",
+    "spese": "16 NEXI"
+  },
+  "BCC": {
+    "pos": "09 BCC",
+    "commissioni": "16 BCC",
+    "bollo": "19 BCC",
+    "bonifico_uscita": "26 BCC",
+    "bonifico_entrata": "47 BCC",
+    "sdd": "50 BCC",
+    "canone": "66 BCC",
+    "altro_uscita": "66 BCC",
+    "altro_entrata": "47 BCC"
+  },
+  "VOLKSBANK": {
+    "pos": "09 VOLKSBANK",
+    "commissioni": "16 VOLKSBANK",
+    "bonifico_uscita": "26 VOLKSBANK",
+    "bonifico_entrata": "47 VOLKSBANK",
+    "quota_corso_entrata": "99 VOLKSBANK",
+    "sdd": "50 VOLKSBANK",
+    "altro_uscita": "66 VOLKSBANK",
+    "altro_entrata": "09 VOLKSBANK",
+    "bonifico_sepa": "26 VOLKSBANK"
+  },
+  "CASSA": {
+    "incasso_quota": "35CASSA",
+    "incasso_generico": "36CASSA",
+    "rimborso_ricevuto": "37CASSA",
+    "banca_a_cassa": "38CASSA",
+    "cassa_a_banca": "39CASSA",
+    "spesa_generica": "40CASSA",
+    "rimborso_spese": "41CASSA",
+    "anticipo_cassa": "42CASSA",
+    "restituzione_anticipo": "43CASSA",
+    "giroconto_interno": "44CASSA",
+    "rettifica_entrata": "45CASSA",
+    "rettifica_uscita": "46CASSA"
+  }
+}

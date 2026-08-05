@@ -22,15 +22,9 @@ def main() -> int:
     splash: QSplashScreen | None = None
     logo_path = resource_path("assets/logo_spes.png")
     if logo_path.exists():
-        pixmap = QPixmap(str(logo_path)).scaled(
-            260, 260, Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
+        pixmap = QPixmap(str(logo_path)).scaled(260, 260, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         splash = QSplashScreen(pixmap)
-        splash.showMessage(
-            APP_NAME,
-            Qt.AlignBottom | Qt.AlignHCenter,
-            Qt.white,
-        )
+        splash.showMessage(APP_NAME, Qt.AlignBottom | Qt.AlignHCenter, Qt.white)
         splash.show()
         app.processEvents()
 
@@ -39,7 +33,6 @@ def main() -> int:
         QTimer.singleShot(900, lambda: (splash.finish(window), window.show()))
     else:
         window.show()
-
     return app.exec()
 
 

@@ -8,11 +8,16 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QTableWidget,
     QTableWidgetItem,
+    QFormLayout,
+    QLineEdit,
     QVBoxLayout,
     QWidget,
 )
 
-from spes_tools.services.storage import load_abi_config, reset_abi_config, save_abi_config
+from spes_tools.services.storage import (
+    load_abi_config, reset_abi_config, save_abi_config,
+    load_rules_config, reset_rules_config, save_rules_config,
+)
 
 
 class AbiWindow(QWidget):
@@ -22,6 +27,8 @@ class AbiWindow(QWidget):
         self.resize(760, 560)
         self.config = load_abi_config()
         self.tables: dict[str, QTableWidget] = {}
+        self.rules = load_rules_config()
+        self.keyword_input = QLineEdit()
         self._build_ui()
         self._fill_tables()
 
@@ -34,12 +41,20 @@ class AbiWindow(QWidget):
 
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
-        for bank in ("NEXI", "BCC", "VOLKSBANK"):
+        for bank in ("NEXI", "BCC", "VOLKSBANK", "CASSA"):
             table = QTableWidget(0, 2)
             table.setHorizontalHeaderLabels(["Tipo movimento", "Causale ABI"])
             table.horizontalHeader().setStretchLastSection(True)
             self.tables[bank] = table
             self.tabs.addTab(table, bank)
+
+        rules_tab = QWidget()
+        rules_form = QFormLayout(rules_tab)
+        self.keyword_input.setText(", ".join(self.rules.get("VOLKSBANK", {}).get("quota_corso_keywords", [])))
+        self.keyword_input.setToolTip("Parole separate da virgola. Valide per bonifici Volksbank in entrata.")
+        rules_form.addRow("Volksbank causale 99 - parole chiave", self.keyword_input)
+        rules_form.addRow(QLabel("Esempi: quota, mensile, mensilità, corso"))
+        self.tabs.addTab(rules_tab, "REGOLE")
 
         buttons = QHBoxLayout()
         save_btn = QPushButton("Salva")
@@ -74,6 +89,9 @@ class AbiWindow(QWidget):
                 updated[key] = value
             self.config[bank] = updated
         save_abi_config(self.config)
+        keywords = [x.strip() for x in self.keyword_input.text().split(",") if x.strip()]
+        self.rules.setdefault("VOLKSBANK", {})["quota_corso_keywords"] = keywords
+        save_rules_config(self.rules)
         QMessageBox.information(self, "Salvataggio completato", "Le causali ABI sono state salvate.")
 
     def reset(self) -> None:
@@ -81,5 +99,7 @@ class AbiWindow(QWidget):
         if answer != QMessageBox.Yes:
             return
         self.config = reset_abi_config()
+        self.rules = reset_rules_config()
+        self.keyword_input.setText(", ".join(self.rules["VOLKSBANK"]["quota_corso_keywords"]))
         self._fill_tables()
         QMessageBox.information(self, "Ripristino completato", "Valori iniziali ripristinati.")

@@ -1,31 +1,33 @@
-# SPES Configuratore Contabile 4.0
+# SPES Configuratore Contabile 5.0
 
-Applicazione desktop di ASD SPES Mestre Ginnastica per:
+Applicazione desktop Windows per riconciliazione bancaria, conversione compensi,
+gestione cassa, causali ABI e storico operazioni.
 
-- riconciliazione bancaria Nexi, BCC e Volksbank;
-- conversione Bonifici SEPA;
-- esportazione CSV TeamSystem;
-- conversione compensi Lordo ↔ Netto con anteprima;
-- configurazione causali ABI;
-- storico operazioni.
+## Funzioni principali
 
-## Identità grafica
+- Nexi PDF: movimenti, bollo e spese estratto conto.
+- BCC RelaxBanking PDF: descrizioni multi-riga e soggetto ordinante.
+- Volksbank: causale `99 VOLKSBANK` configurabile per bonifici in entrata con parole chiave.
+- Bonifici SEPA: beneficiario nel campo SOGGETTO.
+- Convertitore compensi: anteprima immediata, franchigia contributiva EUR 5.000,
+  lordo già percepito e PDF.
+- Gestione Cassa: CSV/Excel e causali `35CASSA`-`46CASSA`.
+- Causali ABI e regole automatiche modificabili dall'app.
+- Test automatici eseguiti nella build GitHub Actions.
 
-Il logo SPES è incluso nella dashboard, nell'icona delle finestre e nell'eseguibile Windows.
+## Compilazione
 
-## Build Windows
+Aprire **Actions → Build SPES Configuratore Contabile Windows → Run workflow**.
+L'artifact prodotto è `SPES_Configuratore_Contabile_5_0`.
 
-1. Caricare l'intero contenuto nel repository GitHub, inclusa `.github` e `assets`.
-2. Aprire **Actions**.
-3. Avviare **Build SPES Configuratore Contabile Windows**.
-4. Scaricare l'artifact `SPES_Configuratore_Contabile_4_0`.
+## Avvio locale
 
-Il file generato è:
-
-```text
-SPES_Configuratore_Contabile.exe
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+$env:PYTHONPATH="app"
+python run.py
 ```
 
-## Avvertenza sui compensi
-
-I calcoli sono simulazioni operative e devono essere verificati dal consulente del lavoro o fiscale prima dell'uso per adempimenti ufficiali.
+I calcoli fiscali e contributivi sono simulazioni operative da verificare con il consulente.
