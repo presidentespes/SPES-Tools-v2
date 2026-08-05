@@ -22,6 +22,7 @@ from spes_tools.ui.banking_window import BankingWindow
 from spes_tools.ui.caf_window import CafWindow
 from spes_tools.ui.cash_window import CashWindow
 from spes_tools.ui.history_window import HistoryWindow
+from spes_tools.ui.settings_window import SettingsWindow
 from spes_tools.version import APP_NAME, APP_VERSION, ORGANIZATION_NAME
 
 
@@ -33,6 +34,7 @@ class MainWindow(QMainWindow):
         self.cash_window: CashWindow | None = None
         self.abi_window: AbiWindow | None = None
         self.history_window: HistoryWindow | None = None
+        self.settings_window: SettingsWindow | None = None
 
         self.setWindowTitle(f"{APP_NAME} {APP_VERSION}")
         self.setMinimumSize(980, 720)
@@ -62,6 +64,7 @@ class MainWindow(QMainWindow):
             ("💵", "Gestione cassa", "Registra entrate e uscite; importa ed esporta CSV o Excel.", self.open_cash),
             ("📚", "Causali ABI", "Configura codici e regole per Nexi, BCC, Volksbank e Cassa.", self.open_abi),
             ("📂", "Storico operazioni", "Consulta conversioni, esportazioni, cassa e calcoli effettuati.", self.open_history),
+            ("⚙", "Impostazioni", "Backup, ripristino configurazione e controllo aggiornamenti.", self.open_settings),
             ("ℹ", "Informazioni", "Versione, identità dell'applicazione e moduli disponibili.", self.open_info),
         ]
 
@@ -154,6 +157,12 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Aperto: Gestione cassa", 5000)
         self._show(self.cash_window)
 
+    def open_settings(self) -> None:
+        if self.settings_window is None:
+            self.settings_window = SettingsWindow()
+        self.statusBar().showMessage("Aperto: Impostazioni", 5000)
+        self._show(self.settings_window)
+
     def open_abi(self) -> None:
         if self.abi_window is None:
             self.abi_window = AbiWindow()
@@ -183,6 +192,7 @@ class MainWindow(QMainWindow):
             "• Convertitore compensi\n"
             "• Gestione cassa CSV/Excel\n"
             "• Configurazione causali ABI e regole automatiche\n"
-            "• Storico operazioni\n\n"
+            "• Storico operazioni\n"
+            "• Backup, ripristino e aggiornamenti\n\n"
             f"© {ORGANIZATION_NAME}",
         )

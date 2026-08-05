@@ -1,4 +1,4 @@
-# SPES Configuratore Contabile 5.0
+# SPES Configuratore Contabile 5.1
 
 Applicazione desktop Windows per riconciliazione bancaria, conversione compensi,
 gestione cassa, causali ABI e storico operazioni.
@@ -9,7 +9,7 @@ gestione cassa, causali ABI e storico operazioni.
 - BCC RelaxBanking PDF: descrizioni multi-riga e soggetto ordinante.
 - Volksbank: causale `99 VOLKSBANK` configurabile per bonifici in entrata con parole chiave.
 - Bonifici SEPA: beneficiario nel campo SOGGETTO.
-- Convertitore compensi: anteprima immediata, franchigia contributiva EUR 5.000,
+- Convertitore compensi: anteprima immediata, franchigia contributiva EUR 5.100,
   lordo già percepito e PDF.
 - Gestione Cassa: CSV/Excel e causali `35CASSA`-`46CASSA`.
 - Causali ABI e regole automatiche modificabili dall'app.
@@ -31,3 +31,8 @@ python run.py
 ```
 
 I calcoli fiscali e contributivi sono simulazioni operative da verificare con il consulente.
+
+
+## Installer e backup
+
+La versione 5.1 produce un Setup.exe e include backup/ripristino configurazione e controllo aggiornamenti.

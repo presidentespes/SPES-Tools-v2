@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import QSignalBlocker
@@ -25,30 +24,11 @@ from reportlab.pdfgen import canvas
 from spes_tools.services.storage import add_history
 
 
-CATEGORY_EMPLOYEE = "Lavoratore dipendente"
-CATEGORY_PENSIONER = "Pensionato"
-CATEGORY_SPORT = "Lavoratore sportivo"
-
-SPORT_NO_OTHER_COVERAGE = "Nessuna altra copertura previdenziale"
-SPORT_PENSION_OR_OTHER = "Pensionato / altra copertura previdenziale"
-
-CONTRIBUTION_THRESHOLD = 5_000.0
-TAX_THRESHOLD = 15_000.0
-
-
-@dataclass
-class Calculation:
-    category: str
-    direction: str
-    input_amount: float
-    gross: float
-    net: float
-    previdential: float = 0.0
-    other_contrib: float = 0.0
-    taxes: float = 0.0
-    previous_gross: float = 0.0
-    cumulative_gross: float = 0.0
-    note: str = ""
+from spes_tools.services.compensation import (
+    CATEGORY_EMPLOYEE, CATEGORY_PENSIONER, CATEGORY_SPORT,
+    SPORT_NO_OTHER_COVERAGE, SPORT_PENSION_OR_OTHER,
+    Calculation, gross_for_target, ordinary_from_gross, sport_from_gross,
+)
 
 
 class CafWindow(QWidget):
@@ -223,120 +203,31 @@ class CafWindow(QWidget):
     def _auto_calculate(self, *_args) -> None:
         self.calculate(show_errors=False)
 
-    @staticmethod
-    def _worker_share(total_rate_pct: float, taxable_base_pct: float) -> float:
-        return (total_rate_pct / 100.0) * (taxable_base_pct / 100.0) / 3.0
-
     def _ordinary_from_gross(self, gross: float) -> Calculation:
-        rate = self._worker_share(self.total_rate.value(), self.taxable_base.value())
-        previdential = round(gross * rate, 2)
-        net = round(gross - previdential, 2)
-        previous = self.previous_gross.value() if self.category.currentText() == CATEGORY_PENSIONER else 0.0
-        return Calculation(
-            category=self.category.currentText(),
-            direction="Lordo → Netto",
-            input_amount=gross,
-            gross=round(gross, 2),
-            net=net,
-            previdential=previdential,
-            previous_gross=previous,
-            cumulative_gross=round(previous + gross, 2),
-            note=(
-                "Quota percettore calcolata come 1/3 dell'aliquota totale sulla base imponibile. "
-                "IRPEF/addizionali non incluse in questo profilo semplificato."
-            ),
+        category = self.category.currentText()
+        return ordinary_from_gross(
+            category=category, gross=gross,
+            previous=self.previous_gross.value() if category == CATEGORY_PENSIONER else 0.0,
+            total_rate_pct=self.total_rate.value(),
+            taxable_base_pct=self.taxable_base.value(),
         )
 
     def _ordinary_calculation(self, direction: str, amount: float) -> Calculation:
         if direction == "Lordo → Netto":
             return self._ordinary_from_gross(amount)
-        target_net = round(amount, 2)
-        rate = self._worker_share(self.total_rate.value(), self.taxable_base.value())
-        if rate >= 1:
-            raise ValueError("Le percentuali inserite producono una trattenuta non valida.")
-        gross = round(target_net / (1 - rate), 2)
-        result = self._ordinary_from_gross(gross)
-        for cents in range(-8, 9):
-            candidate = self._ordinary_from_gross(round(gross + cents / 100, 2))
-            if candidate.net == target_net:
-                result = candidate
-                break
-        result.direction = direction
-        result.input_amount = target_net
-        return result
+        return gross_for_target(amount, self._ordinary_from_gross)
 
     def _sport_from_gross(self, gross: float) -> Calculation:
-        previous = self.previous_gross.value()
-        no_other_coverage = self.sport_profile.currentText() == SPORT_NO_OTHER_COVERAGE
-
-        # La contribuzione riguarda solo la quota che supera € 5.000 annui.
-        before_excess = max(0.0, previous - CONTRIBUTION_THRESHOLD)
-        after_excess = max(0.0, previous + gross - CONTRIBUTION_THRESHOLD)
-        contributory_part = max(0.0, min(gross, after_excess - before_excess))
-
-        ivs_rate = 0.25 if no_other_coverage else 0.24
-        # Fino al 31/12/2027 l'IVS è applicata sul 50% dell'imponibile;
-        # la quota del collaboratore è 1/3.
-        previdential = round(contributory_part * ivs_rate * 0.50 / 3.0, 2)
-        # Aliquote aggiuntive 2026 per co.co.co sportivo senza altra copertura: 2,03%, quota 1/3.
-        other = round(contributory_part * 0.0203 / 3.0, 2) if no_other_coverage else 0.0
-
-        # Stima fiscale sulla sola quota del compenso corrente che porta il cumulato oltre € 15.000.
-        taxable_before = max(0.0, previous - TAX_THRESHOLD)
-        taxable_after = max(0.0, previous + gross - TAX_THRESHOLD)
-        current_taxable = max(0.0, min(gross, taxable_after - taxable_before))
-        taxes = round(current_taxable * self.tax_rate.value() / 100.0, 2)
-
-        net = round(gross - previdential - other - taxes, 2)
-        return Calculation(
-            category=CATEGORY_SPORT,
-            direction="Lordo → Netto",
-            input_amount=gross,
-            gross=round(gross, 2),
-            net=net,
-            previdential=previdential,
-            other_contrib=other,
-            taxes=taxes,
-            previous_gross=previous,
-            cumulative_gross=round(previous + gross, 2),
-            note=(
-                "Soglia contributiva annua € 5.000; IVS sul 50% dell'imponibile fino al 2027; "
-                "quota collaboratore 1/3. Stima fiscale applicata alla quota oltre € 15.000."
-            ),
+        return sport_from_gross(
+            gross=gross, previous=self.previous_gross.value(),
+            no_other_coverage=self.sport_profile.currentText() == SPORT_NO_OTHER_COVERAGE,
+            tax_rate_pct=self.tax_rate.value(),
         )
 
     def _sport_calculation(self, direction: str, amount: float) -> Calculation:
         if direction == "Lordo → Netto":
             return self._sport_from_gross(amount)
-
-        target_net = round(amount, 2)
-        low = target_net
-        high = max(target_net + 100.0, target_net * 1.30)
-        while self._sport_from_gross(high).net < target_net:
-            high *= 1.5
-            if high > 100_000_000:
-                raise ValueError("Impossibile trovare il lordo con i dati inseriti.")
-
-        for _ in range(100):
-            mid = (low + high) / 2.0
-            if self._sport_from_gross(mid).net < target_net:
-                low = mid
-            else:
-                high = mid
-
-        gross = round(high, 2)
-        result = self._sport_from_gross(gross)
-        for cents in range(-10, 11):
-            candidate_gross = round(gross + cents / 100.0, 2)
-            if candidate_gross < 0:
-                continue
-            candidate = self._sport_from_gross(candidate_gross)
-            if candidate.net == target_net:
-                result = candidate
-                break
-        result.direction = direction
-        result.input_amount = target_net
-        return result
+        return gross_for_target(amount, self._sport_from_gross)
 
     def calculate(self, show_errors: bool = True) -> None:
         try:
@@ -368,6 +259,8 @@ class CafWindow(QWidget):
             lines.extend([
                 f"Lordo già percepito:        € {result.previous_gross:,.2f}",
                 f"Lordo cumulato:             € {result.cumulative_gross:,.2f}",
+                f"Franchigia residua:         € {result.franchise_remaining:,.2f}",
+                f"Quota soggetta a contributi: € {result.contributory_part:,.2f}",
             ])
         if result.category == CATEGORY_SPORT:
             lines.append(f"Profilo previdenziale:      {self.sport_profile.currentText()}")

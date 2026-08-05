@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -21,22 +26,47 @@ jobs:
           architecture: "x64"
 
       - name: Installa dipendenze
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-build.txt
 
       - name: Esegui test
+        shell: pwsh
         run: |
           $env:PYTHONPATH = "app"
           python -m pytest -q
 
       - name: Crea eseguibile
+        shell: pwsh
         run: |
-          pyinstaller --noconfirm SPES_Tools.spec
+          python -m PyInstaller --noconfirm SPES_Tools.spec
 
-      - name: Pubblica eseguibile
+      - name: Installa Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Crea installer Windows
+        shell: pwsh
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\SPES_Configurator.iss"'
+
+      - name: Pubblica pacchetto portabile
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_5_0
+          name: SPES_Configuratore_Contabile_5_1_Portable
           path: dist/SPES_Configuratore_Contabile.exe
           if-no-files-found: error
+
+      - name: Pubblica installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SPES_Configuratore_Contabile_5_1_Setup
+          path: dist/installer/SPES_Configuratore_Contabile_5.1_Setup.exe
+          if-no-files-found: error
+
+      - name: Pubblica release GitHub
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/installer/SPES_Configuratore_Contabile_5.1_Setup.exe
+          generate_release_notes: true
