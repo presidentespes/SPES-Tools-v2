@@ -56,7 +56,12 @@ def detect_format(path: str | Path) -> str:
         sample = p.read_text(encoding="utf-8-sig", errors="ignore")[:5000].lower()
         if "beneficiario" in sample and ("bonsepa" in name or "data esecuzione" in sample):
             return "BONIFICI_SEPA_VOLKSBANK"
-        if "data contabile" in sample and "data valuta" in sample:
+        compact_header = re.sub(r"\s+", "", sample.splitlines()[0] if sample.splitlines() else "")
+        if (
+            "data;valuta;dare;avere;causale" in compact_header
+            or "data contabile" in sample and "data valuta" in sample
+            or "estrattoconto_export_csv" in name
+        ):
             return "VOLKSBANK"
         return "CSV"
     return "SCONOSCIUTO"
@@ -274,19 +279,36 @@ def parse_volksbank(path: str | Path) -> list[Movement]:
     result: list[Movement] = []
     for row in rows:
         n = {str(k).strip().lower(): (v or "").strip() for k, v in row.items()}
+
+        # Volksbank may export either one signed IMPORTO column or separate
+        # DARE/AVERE columns. The latter is the current native CSV format.
+        debit = _first(n, "dare", "addebito")
+        credit = _first(n, "avere", "accredito")
         raw = _first(n, "importo")
-        if not raw:
+        if debit or credit:
+            negative = bool(debit)
+            amount = _normalize_amount(debit or credit)
+        elif raw:
+            negative = raw.strip().startswith("-")
+            amount = _normalize_amount(raw)
+        else:
             continue
-        negative = raw.startswith("-")
-        amount = _normalize_amount(raw)
+
         description = _first(n, "descrizione", "causale")
+        if not description:
+            continue
+        abi = _volksbank_rule(description, negative)
         result.append(Movement(
             data=_normalize_date(_first(n, "data contabile", "data")),
             valuta=_normalize_date(_first(n, "data valuta", "valuta")),
-            dare=amount if negative else "", avere=amount if not negative else "",
+            dare=amount if negative else "",
+            avere=amount if not negative else "",
             causale=description,
-            causale_abi=_volksbank_rule(description, negative),
-            desc_causale=description,
+            causale_abi=abi,
+            desc_causale=_volksbank_label(description, negative, abi),
+            soggetto=_extract_volksbank_subject(description),
+            iban=_first(n, "iban"),
+            spuntato=_first(n, "spuntato"),
         ))
     return result
 
@@ -401,11 +423,13 @@ def _normalize_words(value: str) -> str:
 def _volksbank_rule(description: str, negative: bool) -> str:
     d = _normalize_words(description)
     cfg = load_abi_config()["VOLKSBANK"]
+    if "incasso pos" in d or "accredito pos" in d:
+        return cfg["pos"]
     if "commission" in d:
         return cfg["commissioni"]
-    if "sdd" in d:
+    if "sdd" in d or "addeb. diretto" in d or "addebito diretto" in d:
         return cfg["sdd"]
-    if "bonifico" in d:
+    if "bonif" in d:
         if negative:
             return cfg["bonifico_uscita"]
         keywords = load_rules_config().get("VOLKSBANK", {}).get("quota_corso_keywords", [])
@@ -414,3 +438,28 @@ def _volksbank_rule(description: str, negative: bool) -> str:
             return cfg["quota_corso_entrata"]
         return cfg["bonifico_entrata"]
     return cfg["altro_uscita"] if negative else cfg["altro_entrata"]
+
+
+def _volksbank_label(description: str, negative: bool, abi: str) -> str:
+    d = _normalize_words(description)
+    if "incasso pos" in d or "accredito pos" in d:
+        return "Incasso POS"
+    if "commission" in d:
+        return "Commissioni"
+    if "sdd" in d or "addeb. diretto" in d or "addebito diretto" in d:
+        return "Addebito diretto"
+    if "bonif" in d:
+        if not negative and abi == load_abi_config()["VOLKSBANK"]["quota_corso_entrata"]:
+            return "Quota/corso - bonifico in entrata"
+        return "Bonifico in uscita" if negative else "Bonifico in entrata"
+    return "Altro movimento in uscita" if negative else "Altro movimento in entrata"
+
+
+def _extract_volksbank_subject(description: str) -> str:
+    # Native Volksbank rows often contain the counterparty after long spacing.
+    # Keep extraction conservative: use the first readable segment after the
+    # operation prefix and before technical markers.
+    cleaned = " ".join(description.split())
+    cleaned = re.sub(r"^(?:Bonif\.? Vs\.? fav\.?|Bonifico[^A-Za-z0-9]*)\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.split(r"(?:YYY|YY2|IT\d{2}[A-Z]\d{22})", cleaned, maxsplit=1)[0].strip(" -")
+    return cleaned[:160]
