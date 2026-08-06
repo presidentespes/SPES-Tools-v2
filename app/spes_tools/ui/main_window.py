@@ -62,8 +62,10 @@ class DashboardBackground(QWidget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, current_user=None):
         super().__init__()
+
+        self.current_user = current_user
         self.banking_window: BankingWindow | None = None
         self.caf_window: CafWindow | None = None
         self.cash_window: CashWindow | None = None
@@ -78,7 +80,7 @@ class MainWindow(QMainWindow):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        background = DashboardBackground()
+        background = DashboardBackground(self.current_user)
         self.setCentralWidget(background)
 
         outer = QVBoxLayout(background)
