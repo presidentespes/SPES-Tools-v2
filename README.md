@@ -56,3 +56,6 @@ La versione 5.1 produce un Setup.exe e include backup/ripristino configurazione 
 ## Risultati FGI SPES (5.3.3)
 
 Il modulo usa il codice societario FGI `000112`, considera la stagione dal 1 settembre al 31 agosto, estrae le righe SPES da classifiche PDF/Excel/CSV e consente filtro per atleta, filtro disciplina ed esportazione. Su Windows viene registrata un'attività pianificata settimanale ogni lunedì alle ore 01:00; l'aggiornamento può essere avviato anche manualmente dalla finestra Risultati FGI.
+
+## Regolamento FGI integrato (5.3.4)
+Il pulsante **Regolamento FGI** apre il PDF T.U.N.S. 2027 incluso nell'app, senza collegarsi al sito FGI.

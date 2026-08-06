@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import webbrowser
+from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PySide6.QtCore import QSize, Qt, QUrl
+from PySide6.QtGui import QColor, QDesktopServices, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
@@ -21,6 +22,8 @@ from PySide6.QtWidgets import (
 )
 
 from spes_tools.resources import resource_path
+from spes_tools.services.fgi_calendar import load_latest_calendar, update_fgi_calendar
+from spes_tools.services.storage import archive_root
 from spes_tools.ui.abi_window import AbiWindow
 from spes_tools.ui.banking_window import BankingWindow
 from spes_tools.ui.caf_window import CafWindow
@@ -253,13 +256,10 @@ class MainWindow(QMainWindow):
         layout.setSpacing(7)
 
         buttons: tuple[tuple[str, Callable[[], None]], ...] = (
+            ("📂 Archivio CSV", self.open_csv_archive),
+            ("📅 Calendario gare", self.open_fgi_calendar),
             ("🏆 Risultati FGI", self.open_fgi_results),
-            (
-                "📘 Regolamento FGI",
-                lambda: self.open_web_link(
-                    "https://www.federginnastica.it/documenti-e-circolari/documenti-federali/testo-unico-norme-sportive-2027-tuns.html"
-                ),
-            ),
+            ("📘 Regolamento FGI", self.open_fgi_regulation),
             (
                 "🎵 Musica gare",
                 lambda: self.open_web_link(
@@ -334,6 +334,59 @@ class MainWindow(QMainWindow):
             "QPushButton:pressed {background: #f4ddea;}"
         )
         return button
+
+    def open_csv_archive(self) -> None:
+        path = archive_root()
+        path.mkdir(parents=True, exist_ok=True)
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(path))):
+            QMessageBox.warning(self, "Archivio CSV", "Impossibile aprire la cartella archivio CSV.")
+        else:
+            self.statusBar().showMessage("Aperto: Archivio CSV", 4000)
+
+    def open_fgi_calendar(self) -> None:
+        self.statusBar().showMessage("Ricerca dell'ultimo calendario FGI Veneto...", 10000)
+        try:
+            document = update_fgi_calendar()
+        except Exception as exc:
+            cached = load_latest_calendar()
+            if cached and Path(cached.local_path).exists():
+                answer = QMessageBox.question(
+                    self,
+                    "Calendario gare FGI Veneto",
+                    f"Aggiornamento non riuscito:\n{exc}\n\nAprire l'ultimo calendario salvato?",
+                )
+                if answer == QMessageBox.Yes:
+                    QDesktopServices.openUrl(QUrl.fromLocalFile(cached.local_path))
+                return
+            QMessageBox.warning(self, "Calendario gare FGI Veneto", str(exc))
+            return
+
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(document.local_path)):
+            QMessageBox.warning(
+                self,
+                "Calendario gare FGI Veneto",
+                "Il calendario è stato scaricato, ma Windows non riesce ad aprire il PDF.",
+            )
+            return
+        self.statusBar().showMessage(f"Aperto: {document.title}", 5000)
+
+    def open_fgi_regulation(self) -> None:
+        """Apre il regolamento FGI 2027 incluso nell'applicazione."""
+        pdf_path = resource_path("assets/docs/TUNS_2027.pdf")
+        if not pdf_path.exists():
+            QMessageBox.warning(
+                self,
+                "Regolamento FGI",
+                "Il PDF del Regolamento FGI 2027 non è presente nell'installazione.",
+            )
+            return
+
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(pdf_path))):
+            QMessageBox.warning(
+                self,
+                "Regolamento FGI",
+                "Impossibile aprire il PDF. Verifica che sul PC sia installato un lettore PDF.",
+            )
 
     def open_web_link(self, url: str) -> None:
         if not webbrowser.open(url, new=2):

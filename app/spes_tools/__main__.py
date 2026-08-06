@@ -9,10 +9,22 @@ from spes_tools.resources import resource_path
 from spes_tools.ui.main_window import MainWindow
 from spes_tools.version import APP_NAME, ORGANIZATION_NAME
 from spes_tools.services.fgi_results import current_season, update_fgi_results
-from spes_tools.services.fgi_scheduler import ensure_weekly_fgi_task
+from spes_tools.services.fgi_scheduler import (
+    ensure_weekly_fgi_calendar_task,
+    ensure_weekly_fgi_task,
+)
+from spes_tools.services.fgi_calendar import update_fgi_calendar
 
 
 def main() -> int:
+    if "--update-fgi-calendar" in sys.argv:
+        try:
+            update_fgi_calendar()
+        except Exception as exc:
+            print(f"Aggiornamento calendario FGI non riuscito: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
     if "--update-fgi" in sys.argv:
         start, end, _ = current_season(date.today())
         try:
@@ -41,6 +53,7 @@ def main() -> int:
         app.processEvents()
 
     ensure_weekly_fgi_task()
+    ensure_weekly_fgi_calendar_task()
 
     window = MainWindow()
     if splash is not None:

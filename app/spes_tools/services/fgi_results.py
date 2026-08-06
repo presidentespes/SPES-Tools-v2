@@ -142,7 +142,7 @@ def update_fgi_results(
     session.headers.update(
         {
             "User-Agent": (
-                "SPES-Configuratore-Contabile/5.3.3 "
+                "SPES-Configuratore-Contabile/5.3.5 "
                 "(+https://www.spesginnasticamestre.it)"
             )
         }

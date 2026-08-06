@@ -5,19 +5,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-TASK_NAME = "SPES Aggiornamento Risultati FGI"
+RESULTS_TASK_NAME = "SPES Aggiornamento Risultati FGI"
+CALENDAR_TASK_NAME = "SPES Controllo Calendario FGI Veneto"
 
 
-def ensure_weekly_fgi_task() -> bool:
-    """Ensure a Windows task updates FGI results every Monday at 01:00."""
-    if os.name != "nt":
-        return False
+def _command(argument: str) -> str:
     executable = Path(sys.executable).resolve()
     if getattr(sys, "frozen", False):
-        command = f'"{executable}" --update-fgi'
-    else:
-        launcher = Path(sys.argv[0]).resolve()
-        command = f'"{executable}" "{launcher}" --update-fgi'
+        return f'"{executable}" {argument}'
+    launcher = Path(sys.argv[0]).resolve()
+    return f'"{executable}" "{launcher}" {argument}'
+
+
+def _ensure_weekly_task(name: str, day: str, argument: str) -> bool:
+    if os.name != "nt":
+        return False
     try:
         completed = subprocess.run(
             [
@@ -27,13 +29,13 @@ def ensure_weekly_fgi_task() -> bool:
                 "/SC",
                 "WEEKLY",
                 "/D",
-                "MON",
+                day,
                 "/ST",
                 "01:00",
                 "/TN",
-                TASK_NAME,
+                name,
                 "/TR",
-                command,
+                _command(argument),
             ],
             check=False,
             capture_output=True,
@@ -43,3 +45,13 @@ def ensure_weekly_fgi_task() -> bool:
     except OSError:
         return False
     return completed.returncode == 0
+
+
+def ensure_weekly_fgi_task() -> bool:
+    """Aggiorna i risultati FGI ogni lunedì alle 01:00."""
+    return _ensure_weekly_task(RESULTS_TASK_NAME, "MON", "--update-fgi")
+
+
+def ensure_weekly_fgi_calendar_task() -> bool:
+    """Controlla la homepage FGI Veneto ogni domenica alle 01:00."""
+    return _ensure_weekly_task(CALENDAR_TASK_NAME, "SUN", "--update-fgi-calendar")
