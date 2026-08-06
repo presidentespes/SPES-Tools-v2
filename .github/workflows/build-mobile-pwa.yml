@@ -25,11 +25,11 @@ jobs:
       - name: Crea pacchetto mobile
         run: |
           cd mobile
-          zip -r ../Consolle_SPES_Mobile_6_0_4_PWA.zip .
+          zip -r ../Consolle_SPES_Mobile_6_0_5_PWA.zip .
 
       - name: Pubblica pacchetto mobile
         uses: actions/upload-artifact@v4
         with:
-          name: Consolle_SPES_Mobile_6_0_4_PWA
-          path: Consolle_SPES_Mobile_6_0_4_PWA.zip
+          name: Consolle_SPES_Mobile_6_0_5_PWA
+          path: Consolle_SPES_Mobile_6_0_5_PWA.zip
           if-no-files-found: error

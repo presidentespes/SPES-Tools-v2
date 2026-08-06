@@ -1,0 +1,46 @@
+name: Verifica Consolle SPES Backend
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "app/spes_tools/services/auth.py"
+      - "app/spes_tools/services/database.py"
+      - "docker-compose.yml"
+      - ".github/workflows/build-backend.yml"
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il progetto
+        uses: actions/checkout@v4
+
+      - name: Installa Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installa dipendenze backend
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt pytest httpx
+
+      - name: Esegui test backend
+        env:
+          PYTHONPATH: app:.
+          SPES_API_SECRET: github-actions-test-secret-0123456789-abcdefghijklmnopqrstuvwxyz
+        run: python -m pytest backend/tests -q
+
+      - name: Crea pacchetto backend
+        run: zip -r Consolle_SPES_Backend_6_0_5.zip backend app/spes_tools/services/auth.py app/spes_tools/services/database.py docker-compose.yml
+
+      - name: Pubblica pacchetto backend
+        uses: actions/upload-artifact@v4
+        with:
+          name: Consolle_SPES_Backend_6_0_5
+          path: Consolle_SPES_Backend_6_0_5.zip
+          if-no-files-found: error

@@ -51,8 +51,8 @@ app = BUNDLE(
     info_plist={
         "CFBundleName": "Consolle SPES Ginnastica Mestre",
         "CFBundleDisplayName": "Consolle SPES Ginnastica Mestre",
-        "CFBundleShortVersionString": "6.0.4",
-        "CFBundleVersion": "6.0.4",
+        "CFBundleShortVersionString": "6.0.5",
+        "CFBundleVersion": "6.0.5",
         "NSHighResolutionCapable": True,
         "LSMinimumSystemVersion": "11.0",
     },

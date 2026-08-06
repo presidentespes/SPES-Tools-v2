@@ -42,18 +42,18 @@ jobs:
         run: |
           ditto -c -k --sequesterRsrc --keepParent \
             "dist/Consolle SPES Ginnastica Mestre.app" \
-            "dist/Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS.zip"
+            "dist/Consolle_SPES_Ginnastica_Mestre_6_0_5_macOS.zip"
 
       - name: Pubblica applicazione macOS
         uses: actions/upload-artifact@v4
         with:
-          name: Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS
-          path: dist/Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS.zip
+          name: Consolle_SPES_Ginnastica_Mestre_6_0_5_macOS
+          path: dist/Consolle_SPES_Ginnastica_Mestre_6_0_5_macOS.zip
           if-no-files-found: error
 
       - name: Pubblica release GitHub
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS.zip
+          files: dist/Consolle_SPES_Ginnastica_Mestre_6_0_5_macOS.zip
           generate_release_notes: true

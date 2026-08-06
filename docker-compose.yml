@@ -1,0 +1,16 @@
+services:
+  spes-api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      SPES_API_SECRET: ${SPES_API_SECRET}
+      SPES_ALLOWED_ORIGINS: ${SPES_ALLOWED_ORIGINS:-https://consolle.spesginnasticamestre.it}
+    volumes:
+      - spes_api_data:/srv/spes/data
+    ports:
+      - "127.0.0.1:8000:8000"
+
+volumes:
+  spes_api_data:

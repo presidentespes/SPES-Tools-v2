@@ -12,54 +12,68 @@
   <title>Consolle SPES Mobile</title>
 </head>
 <body>
-  <header class="topbar">
-    <img src="icons/icon-192.png" alt="Logo SPES" class="logo">
-    <div>
+  <section id="loginView" class="login-view">
+    <div class="login-card">
+      <img src="icons/icon-192.png" alt="Logo SPES" class="login-logo">
+      <p class="eyebrow">SPES Ginnastica Mestre</p>
       <h1>Consolle SPES</h1>
-      <p>Ginnastica Mestre</p>
+      <p class="muted">Accedi con il tuo account personale.</p>
+      <form id="loginForm">
+        <label>Nome utente<input id="username" autocomplete="username" required></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+        <label>Server API<input id="apiUrl" type="url" placeholder="https://consolle.spesginnasticamestre.it" required></label>
+        <button type="submit" class="primary">Accedi</button>
+        <p id="loginError" class="error" role="alert"></p>
+      </form>
     </div>
-    <button class="icon-button" aria-label="Notifiche">🔔</button>
-  </header>
+  </section>
 
-  <main>
-    <section class="welcome">
-      <p class="eyebrow">Presidente / Admin</p>
-      <h2>Buonasera, Simone</h2>
-      <p>Panoramica completa della SPES.</p>
-    </section>
+  <div id="appView" hidden>
+    <header class="topbar">
+      <img src="icons/icon-192.png" alt="Logo SPES" class="logo">
+      <div><h1>Consolle SPES</h1><p id="roleLabel">Ginnastica Mestre</p></div>
+      <button id="installButton" class="icon-button" hidden aria-label="Installa applicazione">⬇️</button>
+      <button id="logoutButton" class="icon-button" aria-label="Esci">↪</button>
+    </header>
 
-    <section class="stats" aria-label="Riepilogo">
-      <article class="card"><span>📅</span><strong>4</strong><small>Gare questa settimana</small></article>
-      <article class="card"><span>🏆</span><strong>18</strong><small>Ultimi podi SPES</small></article>
-      <article class="card"><span>📢</span><strong>3</strong><small>Nuove circolari</small></article>
-      <article class="card"><span>☁️</span><strong>OK</strong><small>Backup</small></article>
-    </section>
+    <main>
+      <section class="welcome">
+        <p id="profileLabel" class="eyebrow"></p>
+        <h2 id="welcomeTitle">Benvenuto</h2>
+        <p>Le funzioni visualizzate dipendono dai tuoi permessi.</p>
+      </section>
 
-    <section>
-      <div class="section-title"><h3>Accesso completo</h3><button id="installButton" hidden>Installa</button></div>
-      <div class="grid">
-        <a class="tile" href="#"><span>🏦</span>Home Banking</a>
-        <a class="tile" href="#"><span>💶</span>Riconciliazione</a>
-        <a class="tile" href="#"><span>💰</span>Gestione Cassa</a>
-        <a class="tile" href="#"><span>📂</span>Archivio CSV</a>
-        <a class="tile" href="#"><span>🏅</span>Risultati FGI</a>
-        <a class="tile" href="#"><span>📅</span>Calendario gare</a>
-        <a class="tile" href="#"><span>📘</span>Regolamento FGI</a>
-        <a class="tile" href="#"><span>👥</span>Utenti e permessi</a>
-        <a class="tile" href="https://mail.google.com/" target="_blank" rel="noopener"><span>✉️</span>Gmail</a>
-        <a class="tile" href="https://drive.google.com/drive/u/4/home" target="_blank" rel="noopener"><span>☁️</span>Drive SPES</a>
-        <a class="tile" href="https://www.fgiveneto.it/home.asp" target="_blank" rel="noopener"><span>🤸</span>FGI Veneto</a>
-        <a class="tile" href="https://www.spesginnasticamestre.it" target="_blank" rel="noopener"><span>🌐</span>Sito SPES</a>
-      </div>
-    </section>
-  </main>
+      <section id="passwordNotice" class="notice" hidden>
+        <strong>🔐 Cambio password richiesto</strong>
+        <p>La password iniziale deve essere sostituita prima di usare dati sensibili.</p>
+        <button id="changePasswordButton">Cambia password</button>
+      </section>
 
-  <nav class="bottom-nav" aria-label="Navigazione principale">
-    <a class="active" href="#">🏠<small>Home</small></a>
-    <a href="#">🏅<small>FGI</small></a>
-    <a href="#">📁<small>Documenti</small></a>
-    <a href="#">⚙️<small>Sistema</small></a>
-  </nav>
+      <section id="stats" class="stats" aria-label="Riepilogo"></section>
+
+      <section>
+        <div class="section-title"><h3>Funzioni disponibili</h3><span id="connectionState" class="status">Online</span></div>
+        <div id="moduleGrid" class="grid"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navigazione principale">
+      <a class="active" href="#top">🏠<small>Home</small></a>
+      <a href="#modules">🧩<small>Funzioni</small></a>
+      <a href="https://www.fgiveneto.it/home.asp" target="_blank" rel="noopener">🏅<small>FGI</small></a>
+      <button id="settingsButton">⚙️<small>Server</small></button>
+    </nav>
+  </div>
+
+  <dialog id="passwordDialog">
+    <form id="passwordForm" method="dialog">
+      <h3>Cambia password</h3>
+      <label>Password attuale<input id="currentPassword" type="password" required></label>
+      <label>Nuova password<input id="newPassword" type="password" minlength="8" required></label>
+      <div class="dialog-actions"><button value="cancel">Annulla</button><button class="primary" value="default">Salva</button></div>
+      <p id="passwordError" class="error"></p>
+    </form>
+  </dialog>
 
   <script src="app.js"></script>
 </body>
