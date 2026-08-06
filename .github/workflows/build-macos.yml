@@ -1,0 +1,59 @@
+name: Build Consolle SPES Ginnastica Mestre macOS
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+
+    steps:
+      - name: Scarica il progetto
+        uses: actions/checkout@v4
+
+      - name: Installa Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installa dipendenze
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-build.txt
+
+      - name: Esegui test
+        env:
+          PYTHONPATH: app
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q
+
+      - name: Crea applicazione macOS
+        run: python -m PyInstaller --noconfirm SPES_Tools_macOS.spec
+
+      - name: Crea archivio applicazione
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "dist/Consolle SPES Ginnastica Mestre.app" \
+            "dist/Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS.zip"
+
+      - name: Pubblica applicazione macOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS
+          path: dist/Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS.zip
+          if-no-files-found: error
+
+      - name: Pubblica release GitHub
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Consolle_SPES_Ginnastica_Mestre_6_0_4_macOS.zip
+          generate_release_notes: true

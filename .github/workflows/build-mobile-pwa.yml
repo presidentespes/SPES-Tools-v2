@@ -1,0 +1,35 @@
+name: Build Consolle SPES Mobile PWA
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - "mobile/**"
+      - ".github/workflows/build-mobile-pwa.yml"
+
+jobs:
+  package-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica il progetto
+        uses: actions/checkout@v4
+
+      - name: Verifica file PWA
+        run: |
+          test -f mobile/index.html
+          test -f mobile/manifest.webmanifest
+          test -f mobile/service-worker.js
+
+      - name: Crea pacchetto mobile
+        run: |
+          cd mobile
+          zip -r ../Consolle_SPES_Mobile_6_0_4_PWA.zip .
+
+      - name: Pubblica pacchetto mobile
+        uses: actions/upload-artifact@v4
+        with:
+          name: Consolle_SPES_Mobile_6_0_4_PWA
+          path: Consolle_SPES_Mobile_6_0_4_PWA.zip
+          if-no-files-found: error

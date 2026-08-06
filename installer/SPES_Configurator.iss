@@ -1,5 +1,5 @@
 #define MyAppName "Consolle SPES Ginnastica Mestre"
-#define MyAppVersion "6.0.3"
+#define MyAppVersion "6.0.4"
 #define MyAppPublisher "SPES Ginnastica Mestre A.S.D."
 #define MyAppExeName "Consolle_SPES_Ginnastica_Mestre.exe"
 
@@ -13,7 +13,7 @@ DefaultDirName={autopf}\Consolle SPES Ginnastica Mestre
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\dist\installer
-OutputBaseFilename=Consolle_SPES_Ginnastica_Mestre_6.0.3_Setup
+OutputBaseFilename=Consolle_SPES_Ginnastica_Mestre_6.0.4_Setup
 SetupIconFile=..\assets\logo_spes.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max
@@ -22,7 +22,7 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-VersionInfoVersion=6.0.3.0
+VersionInfoVersion=6.0.4.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} Installer
 VersionInfoProductName={#MyAppName}

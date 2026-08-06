@@ -39,3 +39,9 @@ Artifact prodotti:
 - `Consolle_SPES_Ginnastica_Mestre_6_0_1_Setup`
 
 I calcoli fiscali e contributivi sono simulazioni operative da verificare con il consulente.
+
+## Versione macOS
+Il workflow `.github/workflows/build-macos.yml` genera un archivio contenente l'app macOS. Al primo avvio, se l'app non è firmata con certificato Apple Developer, macOS può richiedere l'apertura tramite clic destro > Apri.
+
+## Prototipo mobile PWA
+La cartella `mobile/` contiene una Progressive Web App installabile su iPhone, iPad e Android. È una base grafica: per dati condivisi e funzioni amministrative reali è necessario collegarla in seguito a un backend sicuro.

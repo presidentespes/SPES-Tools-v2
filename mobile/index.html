@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0e4d92">
+  <meta name="description" content="Consolle SPES Ginnastica Mestre mobile">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>Consolle SPES Mobile</title>
+</head>
+<body>
+  <header class="topbar">
+    <img src="icons/icon-192.png" alt="Logo SPES" class="logo">
+    <div>
+      <h1>Consolle SPES</h1>
+      <p>Ginnastica Mestre</p>
+    </div>
+    <button class="icon-button" aria-label="Notifiche">🔔</button>
+  </header>
+
+  <main>
+    <section class="welcome">
+      <p class="eyebrow">Presidente / Admin</p>
+      <h2>Buonasera, Simone</h2>
+      <p>Panoramica completa della SPES.</p>
+    </section>
+
+    <section class="stats" aria-label="Riepilogo">
+      <article class="card"><span>📅</span><strong>4</strong><small>Gare questa settimana</small></article>
+      <article class="card"><span>🏆</span><strong>18</strong><small>Ultimi podi SPES</small></article>
+      <article class="card"><span>📢</span><strong>3</strong><small>Nuove circolari</small></article>
+      <article class="card"><span>☁️</span><strong>OK</strong><small>Backup</small></article>
+    </section>
+
+    <section>
+      <div class="section-title"><h3>Accesso completo</h3><button id="installButton" hidden>Installa</button></div>
+      <div class="grid">
+        <a class="tile" href="#"><span>🏦</span>Home Banking</a>
+        <a class="tile" href="#"><span>💶</span>Riconciliazione</a>
+        <a class="tile" href="#"><span>💰</span>Gestione Cassa</a>
+        <a class="tile" href="#"><span>📂</span>Archivio CSV</a>
+        <a class="tile" href="#"><span>🏅</span>Risultati FGI</a>
+        <a class="tile" href="#"><span>📅</span>Calendario gare</a>
+        <a class="tile" href="#"><span>📘</span>Regolamento FGI</a>
+        <a class="tile" href="#"><span>👥</span>Utenti e permessi</a>
+        <a class="tile" href="https://mail.google.com/" target="_blank" rel="noopener"><span>✉️</span>Gmail</a>
+        <a class="tile" href="https://drive.google.com/drive/u/4/home" target="_blank" rel="noopener"><span>☁️</span>Drive SPES</a>
+        <a class="tile" href="https://www.fgiveneto.it/home.asp" target="_blank" rel="noopener"><span>🤸</span>FGI Veneto</a>
+        <a class="tile" href="https://www.spesginnasticamestre.it" target="_blank" rel="noopener"><span>🌐</span>Sito SPES</a>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navigazione principale">
+    <a class="active" href="#">🏠<small>Home</small></a>
+    <a href="#">🏅<small>FGI</small></a>
+    <a href="#">📁<small>Documenti</small></a>
+    <a href="#">⚙️<small>Sistema</small></a>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
