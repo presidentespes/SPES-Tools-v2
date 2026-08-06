@@ -55,3 +55,35 @@ def ensure_weekly_fgi_task() -> bool:
 def ensure_weekly_fgi_calendar_task() -> bool:
     """Controlla la homepage FGI Veneto ogni domenica alle 01:00."""
     return _ensure_weekly_task(CALENDAR_TASK_NAME, "SUN", "--update-fgi-calendar")
+
+
+def start_initial_fgi_update_if_needed() -> bool:
+    """Avvia subito un aggiornamento in background se l'archivio locale manca o e obsoleto."""
+    from spes_tools.services.fgi_results import results_cache_needs_refresh
+
+    if not results_cache_needs_refresh(max_age_days=7):
+        return False
+    try:
+        if getattr(sys, "frozen", False):
+            command = [str(Path(sys.executable).resolve()), "--update-fgi"]
+        else:
+            command = [
+                str(Path(sys.executable).resolve()),
+                str(Path(sys.argv[0]).resolve()),
+                "--update-fgi",
+            ]
+        kwargs: dict[str, object] = {
+            "stdin": subprocess.DEVNULL,
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+            "close_fds": True,
+        }
+        if os.name == "nt":
+            kwargs["creationflags"] = (
+                getattr(subprocess, "CREATE_NO_WINDOW", 0)
+                | getattr(subprocess, "DETACHED_PROCESS", 0)
+            )
+        subprocess.Popen(command, **kwargs)
+    except OSError:
+        return False
+    return True

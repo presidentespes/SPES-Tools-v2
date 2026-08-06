@@ -8,7 +8,7 @@ from pathlib import Path
 
 from spes_tools.services.storage import abi_path, history_path, rules_path, data_dir
 
-BACKUP_FILES = (abi_path, rules_path, history_path, lambda: data_dir() / "users.json")
+BACKUP_FILES = (abi_path, rules_path, history_path, lambda: data_dir() / "consolle_spes.db")
 
 
 def create_backup(destination: str | Path) -> Path:
@@ -37,7 +37,7 @@ def restore_backup(source: str | Path) -> list[str]:
     if not source_path.exists():
         raise FileNotFoundError(source_path)
 
-    allowed = {"config_abi.json", "config_regole.json", "history.json", "users.json"}
+    allowed = {"config_abi.json", "config_regole.json", "history.json", "consolle_spes.db"}
     restored: list[str] = []
     target_dir = data_dir()
 

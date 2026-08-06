@@ -1,4 +1,4 @@
-name: Build SPES Configuratore Contabile Windows
+name: Build Consolle SPES Ginnastica Mestre Windows
 
 on:
   workflow_dispatch: {}
@@ -53,20 +53,20 @@ jobs:
       - name: Pubblica pacchetto portabile
         uses: actions/upload-artifact@v4
         with:
-          name: Consolle_SPES_Ginnastica_Mestre_5_4_0_Portable
+          name: Consolle_SPES_Ginnastica_Mestre_6_0_3_Portable
           path: dist/Consolle_SPES_Ginnastica_Mestre.exe
           if-no-files-found: error
 
       - name: Pubblica installer
         uses: actions/upload-artifact@v4
         with:
-          name: Consolle_SPES_Ginnastica_Mestre_5_4_0_Setup
-          path: dist/installer/Consolle_SPES_Ginnastica_Mestre_5.4.0_Setup.exe
+          name: Consolle_SPES_Ginnastica_Mestre_6_0_3_Setup
+          path: dist/installer/Consolle_SPES_Ginnastica_Mestre_6.0.3_Setup.exe
           if-no-files-found: error
 
       - name: Pubblica release GitHub
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/installer/Consolle_SPES_Ginnastica_Mestre_5.4.0_Setup.exe
+          files: dist/installer/Consolle_SPES_Ginnastica_Mestre_6.0.3_Setup.exe
           generate_release_notes: true

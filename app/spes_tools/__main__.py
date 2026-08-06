@@ -13,6 +13,7 @@ from spes_tools.services.fgi_results import current_season, update_fgi_results
 from spes_tools.services.fgi_scheduler import (
     ensure_weekly_fgi_calendar_task,
     ensure_weekly_fgi_task,
+    start_initial_fgi_update_if_needed,
 )
 from spes_tools.services.fgi_calendar import update_fgi_calendar
 
@@ -55,6 +56,7 @@ def main() -> int:
 
     ensure_weekly_fgi_task()
     ensure_weekly_fgi_calendar_task()
+    start_initial_fgi_update_if_needed()
 
     if splash is not None:
         splash.close()

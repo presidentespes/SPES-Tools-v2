@@ -28,6 +28,7 @@ from spes_tools.services.fgi_results import (
     export_results_csv,
     export_results_xlsx,
     load_results,
+    last_results_update,
     update_fgi_results,
 )
 
@@ -87,7 +88,8 @@ class FgiResultsWindow(QWidget):
         title.setStyleSheet("font-size: 25px; font-weight: 800; color: #073b84;")
         layout.addWidget(title)
         subtitle = QLabel(
-            f"Società FGI {FGI_CLUB_CODE} • stagione 1 settembre - 31 agosto • filtro per atleta"
+            f"Società FGI {FGI_CLUB_CODE} • ricerca immediata nell'archivio locale • "
+            "aggiornamento automatico ogni lunedì alle 01:00"
         )
         subtitle.setStyleSheet("color: #53657a;")
         layout.addWidget(subtitle)
@@ -117,7 +119,7 @@ class FgiResultsWindow(QWidget):
         layout.addLayout(controls)
 
         actions = QHBoxLayout()
-        self.update_button = QPushButton("Aggiorna ora dal sito FGI")
+        self.update_button = QPushButton("Aggiorna ora archivio FGI")
         self.update_button.clicked.connect(self.update_now)
         actions.addWidget(self.update_button)
         open_source = QPushButton("Apri classifica originale")
@@ -160,6 +162,15 @@ class FgiResultsWindow(QWidget):
 
     def refresh(self) -> None:
         self._all_results = load_results()
+        last_update = last_results_update()
+        if last_update is None:
+            self.progress_label.setText(
+                "Archivio locale non ancora aggiornato: il primo download è in esecuzione o va avviato manualmente."
+            )
+        else:
+            self.progress_label.setText(
+                "Archivio locale aggiornato il " + last_update.strftime("%d/%m/%Y alle %H:%M")
+            )
         disciplines = sorted({item.discipline for item in self._all_results if item.discipline})
         current = self.discipline_filter.currentText()
         self.discipline_filter.blockSignals(True)

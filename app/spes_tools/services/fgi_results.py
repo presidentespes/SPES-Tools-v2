@@ -7,7 +7,7 @@ import json
 import re
 import unicodedata
 from dataclasses import asdict, dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Callable, Iterable
 from urllib.parse import urljoin, urlparse
@@ -88,6 +88,56 @@ class UpdateReport:
 
 def results_path() -> Path:
     return data_dir() / "fgi_results.json"
+
+
+def results_metadata_path() -> Path:
+    return data_dir() / "fgi_results_metadata.json"
+
+
+def load_results_metadata() -> dict[str, str | int]:
+    path = results_metadata_path()
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def last_results_update() -> datetime | None:
+    value = load_results_metadata().get("updated_at")
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def results_cache_needs_refresh(*, max_age_days: int = 7, now: datetime | None = None) -> bool:
+    if not results_path().exists():
+        return True
+    last_update = last_results_update()
+    if last_update is None:
+        return True
+    now = now or datetime.now()
+    return now - last_update >= timedelta(days=max_age_days)
+
+
+def _save_results_metadata(report: "UpdateReport", start_date: date, end_date: date) -> None:
+    payload = {
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "scanned_documents": report.scanned_documents,
+        "matching_rows": report.matching_rows,
+        "added_results": report.added_results,
+        "total_results": report.total_results,
+    }
+    results_metadata_path().write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def current_season(today: date | None = None) -> tuple[date, date, str]:
@@ -211,13 +261,15 @@ def update_fgi_results(
         reverse=True,
     )
     save_results(ordered)
-    return UpdateReport(
+    report = UpdateReport(
         scanned_documents=scanned,
         matching_rows=matching,
         added_results=added,
         total_results=len(ordered),
         warnings=tuple(warnings[:50]),
     )
+    _save_results_metadata(report, start_date, end_date)
+    return report
 
 
 def export_results_csv(path: str | Path, rows: Iterable[FgiResult]) -> None:

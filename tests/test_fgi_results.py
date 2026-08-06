@@ -29,3 +29,27 @@ def test_spes_detection_by_code_and_name():
 
 def test_parse_italian_date():
     assert _parse_italian_date("21 Marzo 2026 Individuale") == date(2026, 3, 21)
+
+from datetime import datetime, timedelta
+import json
+
+
+def test_results_cache_needs_refresh_when_missing(monkeypatch, tmp_path):
+    import spes_tools.services.fgi_results as module
+
+    monkeypatch.setattr(module, "data_dir", lambda: tmp_path)
+    assert module.results_cache_needs_refresh(max_age_days=7)
+
+
+def test_results_cache_uses_local_metadata(monkeypatch, tmp_path):
+    import spes_tools.services.fgi_results as module
+
+    monkeypatch.setattr(module, "data_dir", lambda: tmp_path)
+    module.results_path().write_text("[]", encoding="utf-8")
+    now = datetime(2026, 8, 6, 12, 0, 0)
+    module.results_metadata_path().write_text(
+        json.dumps({"updated_at": (now - timedelta(days=2)).isoformat()}),
+        encoding="utf-8",
+    )
+    assert not module.results_cache_needs_refresh(max_age_days=7, now=now)
+    assert module.results_cache_needs_refresh(max_age_days=1, now=now)
