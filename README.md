@@ -1,19 +1,18 @@
-# SPES Configuratore Contabile 5.3
+# Consolle SPES Ginnastica Mestre 5.4.0
 
-Applicazione desktop Windows per riconciliazione bancaria, conversione compensi,
-gestione cassa, causali ABI e storico operazioni.
+Applicazione desktop Windows per amministrazione, segreteria e consiglio direttivo della SPES Ginnastica Mestre.
 
-## Funzioni principali
+## Accesso iniziale
 
-- Nexi PDF: movimenti, bollo e spese estratto conto.
-- BCC RelaxBanking PDF: descrizioni multi-riga e soggetto ordinante.
-- Volksbank: causale `99 VOLKSBANK` configurabile per bonifici in entrata con parole chiave.
-- Bonifici SEPA: beneficiario nel campo SOGGETTO.
-- Convertitore compensi: anteprima immediata, franchigia contributiva EUR 5.100,
-  lordo già percepito e PDF.
-- Gestione Cassa: CSV/Excel e causali `35CASSA`-`46CASSA`.
-- Causali ABI e regole automatiche modificabili dall'app.
-- Test automatici eseguiti nella build GitHub Actions.
+Utenti iniziali: `admin`, `segreteria`, `consiglieri`. La password iniziale è `gamba` e deve essere modificata obbligatoriamente al primo accesso.
+
+## Permessi
+
+Il profilo assegna una configurazione iniziale, ma l'amministratore può personalizzare per ogni utente la visibilità di singoli moduli e collegamenti. Le password non vengono salvate in chiaro.
+
+## Autore
+
+Cecchinato Simone
 
 ## Compilazione
 

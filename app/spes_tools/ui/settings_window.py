@@ -17,6 +17,8 @@ from PySide6.QtWidgets import (
 )
 
 from spes_tools.services.backup import create_backup, restore_backup
+from spes_tools.services.auth import SessionUser
+from spes_tools.ui.user_management_window import UserManagementWindow
 from spes_tools.services.storage import (
     archive_root,
     data_dir,
@@ -28,9 +30,11 @@ from spes_tools.version import APP_VERSION
 
 
 class SettingsWindow(QWidget):
-    def __init__(self) -> None:
+    def __init__(self, current_user: SessionUser) -> None:
         super().__init__()
-        self.setWindowTitle("SPES Configuratore Contabile - Impostazioni")
+        self.current_user = current_user
+        self.user_management_window: UserManagementWindow | None = None
+        self.setWindowTitle("Consolle SPES Ginnastica Mestre - Impostazioni")
         self.resize(680, 430)
         self._build_ui()
 
@@ -46,6 +50,7 @@ class SettingsWindow(QWidget):
         layout.addWidget(path_label)
 
         backup_title = QLabel("Backup configurazione e storico")
+        backup_title.setVisible(self.current_user.can("backup"))
         backup_title.setStyleSheet("font-size: 17px; font-weight: 700; margin-top: 15px;")
         layout.addWidget(backup_title)
 
@@ -59,7 +64,9 @@ class SettingsWindow(QWidget):
         open_button = QPushButton("Apri cartella dati")
         open_button.clicked.connect(self.open_data_folder)
         backup_buttons.addWidget(open_button)
-        layout.addLayout(backup_buttons)
+        backup_buttons.setEnabled(self.current_user.can("backup"))
+        if self.current_user.can("backup"):
+            layout.addLayout(backup_buttons)
 
         csv_title = QLabel("CSV TeamSystem")
         csv_title.setStyleSheet("font-size: 17px; font-weight: 700; margin-top: 20px;")
@@ -75,7 +82,7 @@ class SettingsWindow(QWidget):
         open_csv_button.clicked.connect(self.open_csv_folder)
         csv_buttons.addWidget(open_csv_button)
         open_archive_button = QPushButton("Apri archivio operazioni")
-        open_archive_button.clicked.connect(lambda: self._open_path(archive_root()))
+        open_archive_button.clicked.connect(lambda: self._open_folder(archive_root()))
         csv_buttons.addWidget(open_archive_button)
         change_csv_button = QPushButton("Cambia cartella")
         change_csv_button.clicked.connect(self.change_csv_folder)
@@ -91,7 +98,16 @@ class SettingsWindow(QWidget):
         layout.addWidget(self.update_status)
         update_button = QPushButton("Controlla aggiornamenti")
         update_button.clicked.connect(self.check_updates)
+        update_button.setVisible(self.current_user.can("updates"))
         layout.addWidget(update_button)
+
+        if self.current_user.can("users_manage"):
+            users_title = QLabel("Utenti e permessi")
+            users_title.setStyleSheet("font-size: 17px; font-weight: 700; margin-top: 20px;")
+            layout.addWidget(users_title)
+            users_button = QPushButton("Gestisci utenti e permessi")
+            users_button.clicked.connect(self.open_user_management)
+            layout.addWidget(users_button)
         layout.addStretch()
 
         note = QLabel(
@@ -101,6 +117,17 @@ class SettingsWindow(QWidget):
         note.setWordWrap(True)
         note.setStyleSheet("color: #53657a;")
         layout.addWidget(note)
+
+    def open_user_management(self) -> None:
+        if not self.current_user.can("users_manage"):
+            QMessageBox.warning(self, "Permessi", "Non hai il permesso di gestire gli utenti.")
+            return
+        if self.user_management_window is None:
+            self.user_management_window = UserManagementWindow()
+        self.user_management_window.refresh()
+        self.user_management_window.show()
+        self.user_management_window.raise_()
+        self.user_management_window.activateWindow()
 
     def export_backup(self) -> None:
         default_name = f"SPES_backup_{datetime.now():%Y%m%d_%H%M}.zip"

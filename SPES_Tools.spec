@@ -25,7 +25,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="SPES_Configuratore_Contabile",
+    name="Consolle_SPES_Ginnastica_Mestre",
     icon="assets/logo_spes.ico",
     debug=False,
     bootloader_ignore_signals=False,

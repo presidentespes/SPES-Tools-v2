@@ -3,10 +3,11 @@ from datetime import date
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtWidgets import QApplication, QSplashScreen
+from PySide6.QtWidgets import QApplication, QDialog, QSplashScreen
 
 from spes_tools.resources import resource_path
 from spes_tools.ui.main_window import MainWindow
+from spes_tools.ui.login_window import LoginDialog
 from spes_tools.version import APP_NAME, ORGANIZATION_NAME
 from spes_tools.services.fgi_results import current_season, update_fgi_results
 from spes_tools.services.fgi_scheduler import (
@@ -55,11 +56,15 @@ def main() -> int:
     ensure_weekly_fgi_task()
     ensure_weekly_fgi_calendar_task()
 
-    window = MainWindow()
     if splash is not None:
-        QTimer.singleShot(900, lambda: (splash.finish(window), window.show()))
-    else:
-        window.show()
+        splash.close()
+
+    login = LoginDialog()
+    if login.exec() != QDialog.Accepted or login.session_user is None:
+        return 0
+
+    window = MainWindow(login.session_user)
+    window.show()
     return app.exec()
 
 

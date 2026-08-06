@@ -1,3 +1,4 @@
-APP_NAME = "SPES Configuratore Contabile"
-APP_VERSION = "5.3.5"
-ORGANIZATION_NAME = "SPES Mestre Ginnastica A.S.D."
+APP_NAME = "Consolle SPES Ginnastica Mestre"
+APP_VERSION = "5.4.0"
+ORGANIZATION_NAME = "SPES Ginnastica Mestre A.S.D."
+AUTHOR_NAME = "Cecchinato Simone"
