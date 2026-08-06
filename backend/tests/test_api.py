@@ -22,7 +22,7 @@ def test_health(tmp_path, monkeypatch):
     client = build_client(tmp_path, monkeypatch)
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json()["version"] == "6.0.5"
+    assert response.json()["version"] == "6.0.6"
 
 
 def test_admin_login_and_modules(tmp_path, monkeypatch):

@@ -1,4 +1,4 @@
 APP_NAME = "Consolle SPES Ginnastica Mestre"
-APP_VERSION = "6.0.5"
+APP_VERSION = "6.0.6"
 ORGANIZATION_NAME = "SPES Ginnastica Mestre A.S.D."
 AUTHOR_NAME = "Cecchinato Simone"

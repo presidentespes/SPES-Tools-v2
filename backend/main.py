@@ -7,6 +7,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,9 +20,10 @@ from spes_tools.services.auth import SessionUser, UserStore  # noqa: E402
 from backend.modules import MODULES  # noqa: E402
 from backend.security import TokenError, create_token, verify_token  # noqa: E402
 
-API_VERSION = "6.0.5"
+API_VERSION = "6.0.6"
 DB_PATH = Path(os.environ.get("SPES_API_DB", ROOT / "backend" / "data" / "consolle_spes_server.db"))
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+MOBILE_DIR = ROOT / "mobile"
 store = UserStore(DB_PATH)
 
 app = FastAPI(title="Consolle SPES API", version=API_VERSION, docs_url="/api/docs", redoc_url=None)
@@ -143,3 +145,9 @@ def list_users(user: Annotated[SessionUser, Depends(_session_from_header)]) -> d
     if not user.can("users_manage"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permesso insufficiente.")
     return {"items": store.list_users()}
+
+
+# La PWA e le API sono pubblicate dallo stesso dominio.
+# Il mount viene aggiunto per ultimo, cosi le rotte /api restano prioritarie.
+if MOBILE_DIR.exists():
+    app.mount("/", StaticFiles(directory=MOBILE_DIR, html=True), name="mobile")

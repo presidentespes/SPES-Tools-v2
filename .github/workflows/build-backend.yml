@@ -10,6 +10,9 @@ on:
       - "app/spes_tools/services/auth.py"
       - "app/spes_tools/services/database.py"
       - "docker-compose.yml"
+      - "railway.json"
+      - "mobile/**"
+      - "DISTRIBUZIONE_CLOUD_6_0_6.md"
       - ".github/workflows/build-backend.yml"
 
 jobs:
@@ -36,11 +39,11 @@ jobs:
         run: python -m pytest backend/tests -q
 
       - name: Crea pacchetto backend
-        run: zip -r Consolle_SPES_Backend_6_0_5.zip backend app/spes_tools/services/auth.py app/spes_tools/services/database.py docker-compose.yml
+        run: zip -r Consolle_SPES_Backend_6_0_6.zip backend app/spes_tools/services/auth.py app/spes_tools/services/database.py docker-compose.yml railway.json mobile DISTRIBUZIONE_CLOUD_6_0_6.md
 
       - name: Pubblica pacchetto backend
         uses: actions/upload-artifact@v4
         with:
-          name: Consolle_SPES_Backend_6_0_5
-          path: Consolle_SPES_Backend_6_0_5.zip
+          name: Consolle_SPES_Backend_6_0_6
+          path: Consolle_SPES_Backend_6_0_6.zip
           if-no-files-found: error

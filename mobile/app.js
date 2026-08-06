@@ -1,5 +1,5 @@
 const state = {
-  apiUrl: localStorage.getItem('spesApiUrl') || 'http://127.0.0.1:8000',
+  apiUrl: localStorage.getItem('spesApiUrl') || ((location.protocol === 'http:' || location.protocol === 'https:') ? location.origin : 'http://127.0.0.1:8000'),
   token: sessionStorage.getItem('spesToken') || '',
   user: null,
   mustChangePassword: false,

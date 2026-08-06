@@ -1,4 +1,4 @@
-# Consolle SPES API 6.0.5
+# Consolle SPES API 6.0.6
 
 Backend centrale per la PWA mobile e, in futuro, per desktop e macOS.
 
@@ -29,3 +29,8 @@ Aprire `http://localhost:8080` e impostare come server API `http://127.0.0.1:800
 Il servizio deve essere pubblicato esclusivamente dietro HTTPS, ad esempio con Caddy o Nginx. Non esporre direttamente la porta 8000 su Internet. La chiave `SPES_API_SECRET` non deve essere caricata su GitHub.
 
 Gli utenti iniziali sono `admin`, `segreteria` e `consiglieri`, tutti con password iniziale `gamba` e cambio obbligatorio. Prima della pubblicazione Internet cambiare immediatamente le password.
+
+
+## Distribuzione Railway
+
+Vedere `DISTRIBUZIONE_CLOUD_6_0_6.md`. La stessa applicazione serve sia le API sia la PWA mobile.
