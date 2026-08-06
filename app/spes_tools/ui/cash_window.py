@@ -16,7 +16,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from spes_tools.services.storage import add_history, load_abi_config
+from spes_tools.services.storage import (
+    add_history,
+    archive_directory,
+    get_export_directory,
+    load_abi_config,
+    set_export_directory,
+)
 
 
 HEADERS = [
@@ -146,9 +152,36 @@ class CashWindow(QWidget):
             self.add_row()
         self.update_totals()
 
+    def _cash_year(self) -> str:
+        for row in self._rows():
+            if not row:
+                continue
+            parts = row[0].strip().split("/")
+            if len(parts) == 3 and len(parts[2]) == 4 and parts[2].isdigit():
+                return parts[2]
+        from datetime import datetime
+        return str(datetime.now().year)
+
+    def _cash_export_folder(self) -> Path:
+        base = get_export_directory()
+        if not base or not Path(base).is_dir():
+            selected = QFileDialog.getExistingDirectory(
+                self,
+                "Seleziona la cartella principale dell'archivio SPES",
+                str(Path.home() / "Documents"),
+            )
+            if not selected:
+                raise ValueError("Esportazione annullata.")
+            set_export_directory(selected)
+        return archive_directory("CASSA", self._cash_year())
+
     def export_csv(self) -> None:
+        try:
+            initial = self._cash_export_folder() / "cassa_registro.csv"
+        except ValueError:
+            return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Esporta registro cassa", "Registro_Cassa_SPES_con_ABI.csv", "CSV (*.csv)"
+            self, "Esporta registro cassa", str(initial), "CSV (*.csv)"
         )
         if not path:
             return
@@ -166,8 +199,12 @@ class CashWindow(QWidget):
         QMessageBox.information(self, "Esportazione completata", path)
 
     def export_xlsx(self) -> None:
+        try:
+            initial = self._cash_export_folder() / "cassa_registro.xlsx"
+        except ValueError:
+            return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Esporta registro cassa", "Registro_Cassa_SPES_con_ABI.xlsx", "Excel (*.xlsx)"
+            self, "Esporta registro cassa", str(initial), "Excel (*.xlsx)"
         )
         if not path:
             return

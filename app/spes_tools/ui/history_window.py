@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import (
@@ -14,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from spes_tools.services.storage import clear_history, load_history
+from spes_tools.services.storage import archive_directory, archive_root, clear_history, load_history
 
 
 class HistoryWindow(QWidget):
@@ -41,6 +43,13 @@ class HistoryWindow(QWidget):
         open_btn = QPushButton("Apri cartella output")
         open_btn.clicked.connect(self.open_output_folder)
         buttons.addWidget(open_btn)
+        archive_btn = QPushButton("Archivio generale")
+        archive_btn.clicked.connect(lambda: self.open_archive_folder(""))
+        buttons.addWidget(archive_btn)
+        for label, category in (("BCC", "BCC"), ("Volksbank", "VOLKSBANK"), ("Nexi", "NEXI"), ("Cassa", "CASSA")):
+            button = QPushButton(label)
+            button.clicked.connect(lambda _checked=False, value=category: self.open_archive_folder(value))
+            buttons.addWidget(button)
         clear_btn = QPushButton("Cancella storico")
         clear_btn.clicked.connect(self.clear)
         buttons.addWidget(clear_btn)
@@ -81,7 +90,23 @@ class HistoryWindow(QWidget):
         if not folder.exists():
             QMessageBox.warning(self, "Cartella non trovata", str(folder))
             return
-        os.startfile(str(folder))
+        self._open_path(folder)
+
+    def open_archive_folder(self, category: str) -> None:
+        folder = archive_directory(category) if category else archive_root()
+        self._open_path(folder)
+
+    @staticmethod
+    def _open_path(path: Path) -> None:
+        try:
+            if os.name == "nt":
+                os.startfile(str(path))  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(path)])
+            else:
+                subprocess.Popen(["xdg-open", str(path)])
+        except OSError as exc:
+            QMessageBox.critical(None, "Errore apertura cartella", str(exc))
 
     def clear(self) -> None:
         answer = QMessageBox.question(self, "Conferma", "Cancellare tutto lo storico?")

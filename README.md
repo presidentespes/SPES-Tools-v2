@@ -1,4 +1,4 @@
-# SPES Configuratore Contabile 5.1
+# SPES Configuratore Contabile 5.3
 
 Applicazione desktop Windows per riconciliazione bancaria, conversione compensi,
 gestione cassa, causali ABI e storico operazioni.
@@ -45,3 +45,10 @@ La versione 5.1 produce un Setup.exe e include backup/ripristino configurazione 
 - il nome è generato automaticamente, ad esempio `bcc_feb_2025.csv`;
 - per periodi su più mesi viene usato un nome come `bcc_nov-dic_2025.csv`;
 - se il file esiste già viene creato automaticamente `_2`, `_3` e così via.
+
+
+## Novita 5.3
+
+- Archivio operazioni separato in BCC, Volksbank, Nexi e Cassa, con sottocartelle per anno.
+- Sei collegamenti rapidi nella dashboard: Sportivi in Cloud, Wellness in Cloud, Cassa in Cloud, SPES Connect e due playlist Spotify.
+- Pulsanti dedicati nello Storico per aprire le cartelle di ciascun archivio.

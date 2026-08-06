@@ -15,6 +15,8 @@ from spes_tools.banking.parsers import Movement, export_teamsystem_csv, parse_fi
 from spes_tools.services.export_naming import available_path, build_export_filename
 from spes_tools.services.storage import (
     add_history,
+    archive_directory,
+    archive_root,
     get_export_directory,
     set_export_directory,
 )
@@ -86,6 +88,13 @@ class BankingWindow(QWidget):
         self._fill_table()
         self.status.setText(f"Formato: {fmt} | Movimenti: {len(movements)} | File: {Path(path).name}")
 
+    def _export_year(self) -> str:
+        for movement in self.movements:
+            parts = movement.data.strip().split("/")
+            if len(parts) == 3 and len(parts[2]) == 4 and parts[2].isdigit():
+                return parts[2]
+        return ""
+
     def export_csv(self) -> None:
         if not self.movements:
             QMessageBox.warning(self, "Nessun dato", "Apri prima un estratto conto.")
@@ -105,8 +114,9 @@ class BankingWindow(QWidget):
             return
 
         set_export_directory(directory)
+        destination = archive_directory(self.current_format, self._export_year())
         suggested_name = build_export_filename(self.current_format, self.movements)
-        output_path = available_path(Path(directory) / suggested_name)
+        output_path = available_path(destination / suggested_name)
 
         try:
             export_teamsystem_csv(output_path, self.movements)
@@ -142,7 +152,7 @@ class BankingWindow(QWidget):
                 return
             set_export_directory(directory)
 
-        self._open_path(Path(directory))
+        self._open_path(archive_root())
 
     @staticmethod
     def _open_path(path: Path) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import webbrowser
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -37,8 +38,8 @@ class MainWindow(QMainWindow):
         self.settings_window: SettingsWindow | None = None
 
         self.setWindowTitle(f"{APP_NAME} {APP_VERSION}")
-        self.setMinimumSize(980, 720)
-        self.resize(1120, 820)
+        self.setMinimumSize(1040, 820)
+        self.resize(1180, 940)
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -70,6 +71,8 @@ class MainWindow(QMainWindow):
 
         for index, (icon, title, description, callback) in enumerate(modules):
             grid.addWidget(self._card(icon, title, description, callback), index // 2, index % 2)
+
+        main_layout.addWidget(self._build_quick_links())
 
         status = QStatusBar()
         status.setStyleSheet("QStatusBar {background: #ffffff; color: #53657a; border-top: 1px solid #d6dde5;}")
@@ -138,6 +141,47 @@ class MainWindow(QMainWindow):
         )
         layout.addWidget(button)
         return card
+
+    def _build_quick_links(self) -> QWidget:
+        panel = QWidget()
+        panel.setStyleSheet("QWidget {background: white; border: 1px solid #d6dde5; border-radius: 12px;}")
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(14, 12, 14, 12)
+        layout.setSpacing(8)
+
+        title = QLabel("Collegamenti rapidi")
+        title.setStyleSheet("border: none; font-size: 16px; font-weight: 700; color: #073b84;")
+        layout.addWidget(title)
+
+        links = (
+            ("Sportivi in Cloud", "https://www.cloud32.it/GES/login?&rpet=true"),
+            ("Wellness in Cloud", "https://new.wellness.incloud.it/dashboard"),
+            ("Cassa in Cloud", "https://fo.cassanova.com/#/dashboard"),
+            ("SPES Connect", "https://connect.spesginnasticamestre.it/dashboard"),
+            ("Musica per gare", "https://open.spotify.com/playlist/43fGlA3pU5xsLSRbYg9198"),
+            ("Musica premiazioni gara", "https://open.spotify.com/playlist/0QjHGc2S4ggUNNjQTXlENa"),
+        )
+        rows = (QHBoxLayout(), QHBoxLayout())
+        for index, (label, url) in enumerate(links):
+            button = QPushButton(label)
+            button.setToolTip(f"Apri {url} nel browser predefinito")
+            button.setCursor(Qt.PointingHandCursor)
+            button.clicked.connect(lambda _checked=False, address=url: self.open_web_link(address))
+            button.setStyleSheet(
+                "QPushButton {background: #eef4fb; color: #073b84; border: 1px solid #b9cce3; "
+                "border-radius: 7px; padding: 8px 10px; font-weight: 650;}"
+                "QPushButton:hover {background: #dceafb;}"
+            )
+            rows[index // 3].addWidget(button)
+        for row in rows:
+            layout.addLayout(row)
+        return panel
+
+    def open_web_link(self, url: str) -> None:
+        if not webbrowser.open(url, new=2):
+            QMessageBox.warning(self, "Collegamento non aperto", f"Impossibile aprire il collegamento:\n{url}")
+        else:
+            self.statusBar().showMessage("Collegamento aperto nel browser", 4000)
 
     def open_banking(self) -> None:
         if self.banking_window is None:

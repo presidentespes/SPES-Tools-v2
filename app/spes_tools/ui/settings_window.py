@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from spes_tools.services.backup import create_backup, restore_backup
 from spes_tools.services.storage import (
+    archive_root,
     data_dir,
     get_export_directory,
     set_export_directory,
@@ -73,6 +74,9 @@ class SettingsWindow(QWidget):
         open_csv_button = QPushButton("Apri cartella CSV")
         open_csv_button.clicked.connect(self.open_csv_folder)
         csv_buttons.addWidget(open_csv_button)
+        open_archive_button = QPushButton("Apri archivio operazioni")
+        open_archive_button.clicked.connect(lambda: self._open_path(archive_root()))
+        csv_buttons.addWidget(open_archive_button)
         change_csv_button = QPushButton("Cambia cartella")
         change_csv_button.clicked.connect(self.change_csv_folder)
         csv_buttons.addWidget(change_csv_button)

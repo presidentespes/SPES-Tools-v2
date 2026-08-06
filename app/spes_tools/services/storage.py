@@ -113,6 +113,43 @@ def set_export_directory(path: str | Path) -> None:
     save_preferences(preferences)
 
 
+
+ARCHIVE_FOLDER_NAME = "Storico operazioni"
+ARCHIVE_CATEGORIES = ("BCC", "VOLKSBANK", "NEXI", "CASSA")
+
+
+def archive_root() -> Path:
+    """Return the common archive root and create it when possible."""
+    base = get_export_directory()
+    if base:
+        root = Path(base) / ARCHIVE_FOLDER_NAME
+    else:
+        root = Path.home() / "Documents" / "SPES" / ARCHIVE_FOLDER_NAME
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def archive_category_name(value: str) -> str:
+    normalized = str(value).strip().upper()
+    if "BCC" in normalized:
+        return "BCC"
+    if "VOLKSBANK" in normalized or "BONIFICI_SEPA" in normalized:
+        return "VOLKSBANK"
+    if "NEXI" in normalized:
+        return "NEXI"
+    if "CASSA" in normalized:
+        return "CASSA"
+    return "ALTRO"
+
+
+def archive_directory(category: str, year: str | int | None = None) -> Path:
+    """Create and return the archive folder for a source and optional year."""
+    folder = archive_root() / archive_category_name(category)
+    if year and str(year).isdigit():
+        folder /= str(year)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
 def load_rules_config() -> dict[str, dict[str, list[str]]]:
     path = rules_path()
     if not path.exists():
