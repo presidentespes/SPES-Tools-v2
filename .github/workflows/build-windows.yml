@@ -1,10 +1,12 @@
 name: Build SPES Configuratore Contabile Windows
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
   push:
     branches:
       - main
+    tags:
+      - "v*"
 
 permissions:
   contents: write
@@ -51,20 +53,20 @@ jobs:
       - name: Pubblica pacchetto portabile
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_5_3_Portable
+          name: SPES_Configuratore_Contabile_5_3_2_Portable
           path: dist/SPES_Configuratore_Contabile.exe
           if-no-files-found: error
 
       - name: Pubblica installer
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_5_3_Setup
-          path: dist/installer/SPES_Configuratore_Contabile_5.3_Setup.exe
+          name: SPES_Configuratore_Contabile_5_3_2_Setup
+          path: dist/installer/SPES_Configuratore_Contabile_5.3.2_Setup.exe
           if-no-files-found: error
 
       - name: Pubblica release GitHub
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/installer/SPES_Configuratore_Contabile_5.3_Setup.exe
+          files: dist/installer/SPES_Configuratore_Contabile_5.3.2_Setup.exe
           generate_release_notes: true
