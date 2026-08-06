@@ -1,4 +1,5 @@
 import sys
+from datetime import date
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon, QPixmap
@@ -7,9 +8,20 @@ from PySide6.QtWidgets import QApplication, QSplashScreen
 from spes_tools.resources import resource_path
 from spes_tools.ui.main_window import MainWindow
 from spes_tools.version import APP_NAME, ORGANIZATION_NAME
+from spes_tools.services.fgi_results import current_season, update_fgi_results
+from spes_tools.services.fgi_scheduler import ensure_weekly_fgi_task
 
 
 def main() -> int:
+    if "--update-fgi" in sys.argv:
+        start, end, _ = current_season(date.today())
+        try:
+            update_fgi_results(start, end)
+        except Exception as exc:
+            print(f"Aggiornamento FGI non riuscito: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME)
@@ -27,6 +39,8 @@ def main() -> int:
         splash.showMessage(APP_NAME, Qt.AlignBottom | Qt.AlignHCenter, Qt.white)
         splash.show()
         app.processEvents()
+
+    ensure_weekly_fgi_task()
 
     window = MainWindow()
     if splash is not None:

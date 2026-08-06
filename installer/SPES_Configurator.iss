@@ -1,5 +1,5 @@
 #define MyAppName "SPES Configuratore Contabile"
-#define MyAppVersion "5.3.2"
+#define MyAppVersion "5.3.3"
 #define MyAppPublisher "SPES Mestre Ginnastica A.S.D."
 #define MyAppExeName "SPES_Configuratore_Contabile.exe"
 
@@ -13,7 +13,7 @@ DefaultDirName={autopf}\SPES Configuratore Contabile
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir=..\dist\installer
-OutputBaseFilename=SPES_Configuratore_Contabile_5.3.2_Setup
+OutputBaseFilename=SPES_Configuratore_Contabile_5.3.3_Setup
 SetupIconFile=..\assets\logo_spes.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max
@@ -22,7 +22,7 @@ WizardStyle=modern
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-VersionInfoVersion=5.3.2.0
+VersionInfoVersion=5.3.3.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} Installer
 VersionInfoProductName={#MyAppName}

@@ -26,6 +26,7 @@ from spes_tools.ui.banking_window import BankingWindow
 from spes_tools.ui.caf_window import CafWindow
 from spes_tools.ui.cash_window import CashWindow
 from spes_tools.ui.history_window import HistoryWindow
+from spes_tools.ui.fgi_results_window import FgiResultsWindow
 from spes_tools.ui.settings_window import SettingsWindow
 from spes_tools.version import APP_NAME, APP_VERSION, ORGANIZATION_NAME
 
@@ -64,6 +65,7 @@ class MainWindow(QMainWindow):
         self.abi_window: AbiWindow | None = None
         self.history_window: HistoryWindow | None = None
         self.settings_window: SettingsWindow | None = None
+        self.fgi_results_window: FgiResultsWindow | None = None
 
         self.setWindowTitle(f"{APP_NAME} {APP_VERSION}")
         self.setMinimumSize(1180, 760)
@@ -344,10 +346,11 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Collegamento aperto nel browser", 4000)
 
     def open_fgi_results(self) -> None:
-        """Apre la pagina ufficiale FGI; il motore di estrazione resta separato."""
-        self.open_web_link(
-            "https://www.federginnastica.it/calendario-gare/classifiche/classifiche.html"
-        )
+        if self.fgi_results_window is None:
+            self.fgi_results_window = FgiResultsWindow()
+        self.fgi_results_window.refresh()
+        self.statusBar().showMessage("Aperto: Risultati FGI SPES", 5000)
+        self._show(self.fgi_results_window)
 
     def open_banking(self) -> None:
         if self.banking_window is None:
@@ -403,6 +406,7 @@ class MainWindow(QMainWindow):
             "• Gestione cassa CSV/Excel\n"
             "• Configurazione causali ABI e regole automatiche\n"
             "• Storico operazioni\n"
+            "• Risultati FGI SPES con filtro atleta\n"
             "• Backup, ripristino e aggiornamenti\n\n"
             f"© {ORGANIZATION_NAME}",
         )
