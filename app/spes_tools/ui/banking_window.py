@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -48,8 +51,16 @@ class BankingWindow(QWidget):
         export_btn = QPushButton("Esporta CSV TeamSystem")
         export_btn.clicked.connect(self.export_csv)
         buttons.addWidget(export_btn)
+
+        open_folder_btn = QPushButton("Apri cartella CSV")
+        open_folder_btn.clicked.connect(self.open_export_folder)
+        buttons.addWidget(open_folder_btn)
         buttons.addStretch()
         layout.addLayout(buttons)
+
+        self.last_export_label = QLabel("Ultima esportazione: nessuna")
+        self.last_export_label.setStyleSheet("color: #53657a;")
+        layout.addWidget(self.last_export_label)
 
         self.table = QTableWidget(0, len(self.HEADERS))
         self.table.setHorizontalHeaderLabels(self.HEADERS)
@@ -110,11 +121,40 @@ class BankingWindow(QWidget):
             rows=len(self.movements),
             details=self.current_format,
         )
+        self.last_export_label.setText(f"Ultima esportazione: {output_path.name}")
+        self.last_export_label.setToolTip(str(output_path))
         QMessageBox.information(
             self,
             "Esportazione completata",
             f"File creato:\n{output_path}",
         )
+
+    def open_export_folder(self) -> None:
+        directory = get_export_directory()
+        if not directory or not Path(directory).is_dir():
+            initial_directory = str(Path.home() / "Documents")
+            directory = QFileDialog.getExistingDirectory(
+                self,
+                "Seleziona la cartella dei CSV TeamSystem",
+                initial_directory,
+            )
+            if not directory:
+                return
+            set_export_directory(directory)
+
+        self._open_path(Path(directory))
+
+    @staticmethod
+    def _open_path(path: Path) -> None:
+        try:
+            if os.name == "nt":
+                os.startfile(str(path))  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(path)])
+            else:
+                subprocess.Popen(["xdg-open", str(path)])
+        except OSError as exc:
+            QMessageBox.critical(None, "Errore apertura cartella", str(exc))
 
     def _fill_table(self) -> None:
         self.table.setRowCount(len(self.movements))

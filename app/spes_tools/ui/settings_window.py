@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -16,7 +17,11 @@ from PySide6.QtWidgets import (
 )
 
 from spes_tools.services.backup import create_backup, restore_backup
-from spes_tools.services.storage import data_dir
+from spes_tools.services.storage import (
+    data_dir,
+    get_export_directory,
+    set_export_directory,
+)
 from spes_tools.services.updater import check_for_update, download_installer, open_release_page
 from spes_tools.version import APP_VERSION
 
@@ -54,6 +59,26 @@ class SettingsWindow(QWidget):
         open_button.clicked.connect(self.open_data_folder)
         backup_buttons.addWidget(open_button)
         layout.addLayout(backup_buttons)
+
+        csv_title = QLabel("CSV TeamSystem")
+        csv_title.setStyleSheet("font-size: 17px; font-weight: 700; margin-top: 20px;")
+        layout.addWidget(csv_title)
+
+        self.csv_path_label = QLabel()
+        self.csv_path_label.setWordWrap(True)
+        self.csv_path_label.setStyleSheet("color: #53657a;")
+        layout.addWidget(self.csv_path_label)
+
+        csv_buttons = QHBoxLayout()
+        open_csv_button = QPushButton("Apri cartella CSV")
+        open_csv_button.clicked.connect(self.open_csv_folder)
+        csv_buttons.addWidget(open_csv_button)
+        change_csv_button = QPushButton("Cambia cartella")
+        change_csv_button.clicked.connect(self.change_csv_folder)
+        csv_buttons.addWidget(change_csv_button)
+        csv_buttons.addStretch()
+        layout.addLayout(csv_buttons)
+        self._refresh_csv_path()
 
         update_title = QLabel("Aggiornamenti")
         update_title.setStyleSheet("font-size: 17px; font-weight: 700; margin-top: 20px;")
@@ -113,6 +138,45 @@ class SettingsWindow(QWidget):
             os.startfile(path)  # type: ignore[attr-defined]
         else:
             subprocess.Popen(["xdg-open", path])
+
+    def _refresh_csv_path(self) -> None:
+        directory = get_export_directory()
+        self.csv_path_label.setText(
+            f"Cartella corrente: {directory}" if directory else "Cartella corrente: non impostata"
+        )
+
+    def change_csv_folder(self) -> None:
+        initial = get_export_directory() or str(Path.home() / "Documents")
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Seleziona la cartella dei CSV TeamSystem",
+            initial,
+        )
+        if not directory:
+            return
+        set_export_directory(directory)
+        self._refresh_csv_path()
+
+    def open_csv_folder(self) -> None:
+        directory = get_export_directory()
+        if not directory or not Path(directory).is_dir():
+            self.change_csv_folder()
+            directory = get_export_directory()
+        if not directory or not Path(directory).is_dir():
+            return
+        self._open_folder(Path(directory))
+
+    @staticmethod
+    def _open_folder(path: Path) -> None:
+        try:
+            if os.name == "nt":
+                os.startfile(str(path))  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", str(path)])
+            else:
+                subprocess.Popen(["xdg-open", str(path)])
+        except OSError as exc:
+            QMessageBox.critical(None, "Errore apertura cartella", str(exc))
 
     def check_updates(self) -> None:
         self.update_status.setText("Controllo aggiornamenti in corso...")

@@ -50,29 +50,23 @@ jobs:
         shell: pwsh
         run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\SPES_Configurator.iss"'
 
-      - name: Elenca file generati
-        shell: pwsh
-        run: |
-          Write-Host "Contenuto cartella dist:"
-          Get-ChildItem dist -Recurse
-
       - name: Pubblica pacchetto portabile
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_5_2_Portable
+          name: SPES_Configuratore_Contabile_5_2_1_Portable
           path: dist/SPES_Configuratore_Contabile.exe
           if-no-files-found: error
 
       - name: Pubblica installer
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_5_2_Setup
-          path: dist/installer/SPES_Configuratore_Contabile_5.2_Setup.exe
+          name: SPES_Configuratore_Contabile_5_2_1_Setup
+          path: dist/installer/SPES_Configuratore_Contabile_5.2.1_Setup.exe
           if-no-files-found: error
 
       - name: Pubblica release GitHub
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/installer/SPES_Configuratore_Contabile_5.2_Setup.exe
+          files: dist/installer/SPES_Configuratore_Contabile_5.2.1_Setup.exe
           generate_release_notes: true
