@@ -53,14 +53,14 @@ jobs:
       - name: Pubblica pacchetto portabile
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_5_1_Portable
+          name: SPES_Configuratore_Contabile_5_2_Portable
           path: dist/SPES_Configuratore_Contabile.exe
           if-no-files-found: error
 
       - name: Pubblica installer
         uses: actions/upload-artifact@v4
         with:
-          name: SPES_Configuratore_Contabile_5_1_Setup
+          name: SPES_Configuratore_Contabile_5_2_Setup
           path: dist/installer/SPES_Configuratore_Contabile_5.1_Setup.exe
           if-no-files-found: error
 

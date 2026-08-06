@@ -79,6 +79,40 @@ def rules_path() -> Path:
     return data_dir() / "config_regole.json"
 
 
+def preferences_path() -> Path:
+    return data_dir() / "preferences.json"
+
+
+def load_preferences() -> dict[str, str]:
+    path = preferences_path()
+    if not path.exists():
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {str(key): str(value) for key, value in raw.items()}
+
+
+def save_preferences(preferences: dict[str, str]) -> None:
+    preferences_path().write_text(
+        json.dumps(preferences, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def get_export_directory() -> str:
+    return load_preferences().get("csv_export_directory", "")
+
+
+def set_export_directory(path: str | Path) -> None:
+    preferences = load_preferences()
+    preferences["csv_export_directory"] = str(Path(path))
+    save_preferences(preferences)
+
+
 def load_rules_config() -> dict[str, dict[str, list[str]]]:
     path = rules_path()
     if not path.exists():

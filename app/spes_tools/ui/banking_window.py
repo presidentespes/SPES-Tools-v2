@@ -9,7 +9,12 @@ from PySide6.QtWidgets import (
 )
 
 from spes_tools.banking.parsers import Movement, export_teamsystem_csv, parse_file
-from spes_tools.services.storage import add_history
+from spes_tools.services.export_naming import available_path, build_export_filename
+from spes_tools.services.storage import (
+    add_history,
+    get_export_directory,
+    set_export_directory,
+)
 
 
 class BankingWindow(QWidget):
@@ -74,21 +79,42 @@ class BankingWindow(QWidget):
         if not self.movements:
             QMessageBox.warning(self, "Nessun dato", "Apri prima un estratto conto.")
             return
+
         self._read_table()
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Salva CSV TeamSystem", "teamsystem_export.csv", "CSV (*.csv)"
+        initial_directory = get_export_directory()
+        if not initial_directory or not Path(initial_directory).is_dir():
+            initial_directory = str(Path.home() / "Documents")
+
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Seleziona la cartella di destinazione del CSV TeamSystem",
+            initial_directory,
         )
-        if not path:
+        if not directory:
             return
-        if not path.lower().endswith(".csv"):
-            path += ".csv"
+
+        set_export_directory(directory)
+        suggested_name = build_export_filename(self.current_format, self.movements)
+        output_path = available_path(Path(directory) / suggested_name)
+
         try:
-            export_teamsystem_csv(path, self.movements)
+            export_teamsystem_csv(output_path, self.movements)
         except Exception as exc:
             QMessageBox.critical(self, "Errore esportazione", str(exc))
             return
-        add_history(module="Riconciliazione bancaria", source=self.source_path, output=path, rows=len(self.movements), details=self.current_format)
-        QMessageBox.information(self, "Esportazione completata", f"Creato:\n{path}")
+
+        add_history(
+            module="Riconciliazione bancaria",
+            source=self.source_path,
+            output=str(output_path),
+            rows=len(self.movements),
+            details=self.current_format,
+        )
+        QMessageBox.information(
+            self,
+            "Esportazione completata",
+            f"File creato:\n{output_path}",
+        )
 
     def _fill_table(self) -> None:
         self.table.setRowCount(len(self.movements))
@@ -112,3 +138,4 @@ class BankingWindow(QWidget):
                 values.append(item.text() if item else "")
             rows.append(Movement(*values))
         self.movements = rows
+

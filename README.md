@@ -36,3 +36,12 @@ I calcoli fiscali e contributivi sono simulazioni operative da verificare con il
 ## Installer e backup
 
 La versione 5.1 produce un Setup.exe e include backup/ripristino configurazione e controllo aggiornamenti.
+
+
+## Esportazione CSV TeamSystem
+
+- l'operatore sceglie la cartella di destinazione;
+- l'ultima cartella viene ricordata;
+- il nome è generato automaticamente, ad esempio `bcc_feb_2025.csv`;
+- per periodi su più mesi viene usato un nome come `bcc_nov-dic_2025.csv`;
+- se il file esiste già viene creato automaticamente `_2`, `_3` e così via.
