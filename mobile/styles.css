@@ -26,7 +26,9 @@ main { padding:20px 16px; max-width:760px; margin:auto; }
 .bottom-nav a.active { color:#0e4d92; }
 .bottom-nav small { font-size:11px; }
 @media (min-width:680px) { .stats { grid-template-columns:repeat(4,1fr); } .grid { grid-template-columns:repeat(4,1fr); } }
-.login-view { min-height:100vh; display:grid; place-items:center; padding:24px; background:linear-gradient(145deg,#eaf2ff,#f8fbff 55%,#fff0f0); }
+[hidden] {
+    display: none !important;
+}.login-view { min-height:100vh; display:grid; place-items:center; padding:24px; background:linear-gradient(145deg,#eaf2ff,#f8fbff 55%,#fff0f0); }
 .login-card { width:min(420px,100%); background:#fff; padding:30px; border-radius:28px; box-shadow:0 24px 70px #0e4d9228; }
 .login-logo { width:92px; height:92px; display:block; object-fit:contain; margin:0 auto 12px; }
 .login-card h1 { text-align:center; font-size:30px; }
